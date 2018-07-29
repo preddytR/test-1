@@ -1,6 +1,6 @@
 module.exports = {
-  baseUrl: '/git/polysolve/test-1',
-  outputDir: undefined,
+  baseUrl: undefined,
+  outputDir: '/var/www/testbuild',
   assetsDir: undefined,
   runtimeCompiler: undefined,
   productionSourceMap: undefined,
