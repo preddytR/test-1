@@ -2,7 +2,7 @@
   <div id="app">
     <img src="./assets/logo.png">
     <h1>{{ msg }}</h1>
-    <span>Enter a polynomial function to solve:</span>
+    <span>Enter a polynomial function to solve: testingA</span>
     <input name="poly" v-model="stringFunction" type="text" placeholder="e.g 4x^2+2x+3">
     <button name="solve" @click="solvePoly()">Solve</button>
     <h2>The Algorithm</h2>
