@@ -1,6 +1,6 @@
 module.exports = {
   baseUrl: undefined,
-  outputDir: '/var/www/testbuild',
+  outputDir: undefined,
   assetsDir: undefined,
   runtimeCompiler: undefined,
   productionSourceMap: undefined,
