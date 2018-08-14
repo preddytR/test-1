@@ -10,10 +10,12 @@
     "serve:electron": "vue-cli-service serve:electron"
   },
   "dependencies": {
-    "node-sass": "^4.9.0",
+    "node-sass": "^4.9.3",
     "sass": "^1.9.0",
     "sass-loader": "^7.0.3",
-    "vue": "^2.5.16"
+    "vue": "^2.5.16",
+    "vue-resource": "^1.5.1",
+    "vue-router": "^3.0.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.0-beta.15",

@@ -9,7 +9,8 @@
 </template>
 
 <script>
-import {sendFunction} from './solutionRequests/sendFunction'
+import {TokensToAST} from './algorithm/TokensToAST'
+//import {sendFunction} from './solutionRequests/sendFunction'
 export default {
   name: 'app',
   data () {
@@ -20,10 +21,21 @@ export default {
     }
   },
   methods: {
-    checkFunction(){
-      this.result = this.sendFunction(this.stringFunction);
-    },
-    sendFunction
+    checkFunction: function(){
+      let generate = new TokensToAST(this.stringFunction);
+      let func = generate.factor()
+      this.$http.post('https://random-project-testing.com/api/function',func)
+      .then(function(response){
+        let results = response.body.solutions;
+        let time = response.body.time;
+        this.result = {'results':results,'time':time}
+      }, function(error){
+        throw error
+        //console.log(error);
+      });
+      //return func
+      //console.log(func);
+    }
   }
 }
 </script>
