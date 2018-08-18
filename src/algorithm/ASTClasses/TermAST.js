@@ -20,7 +20,7 @@ TermAST.prototype.toString = function TermString(){
     } else {
         r_str += this.coeff+this.variable
     }
-    if (this.power == 1) {
+    if (this.power == 1 || this.power == 0) {
       r_str += ''
     } else {
       r_str += '^' + this.power

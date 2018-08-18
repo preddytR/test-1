@@ -6,7 +6,12 @@ import {TermAST} from './ASTClasses/TermAST'
 
 class TokensToAST{ //take a string input and uses it to convert tokens to an AST
   constructor(string_input){
-    let convert = new ConvertStringToTokens(string_input,"x");
+    let convert;
+    try {
+      convert = new ConvertStringToTokens(string_input,"x");
+    } catch (e) {
+      throw 'StringToTokens Error ' + e
+    }
     convert.convert();
     this.token_stack = convert.token_stack;
     this.token_length = this.token_stack.length;
@@ -61,6 +66,7 @@ class TokensToAST{ //take a string input and uses it to convert tokens to an AST
     } else {
       token_stack = tokens.slice(0,index)
     }
+    //console.log(tokens);
     let term_list = [];
     while (token_stack.length > 0) {
       //console.log('token stack',token_stack);
@@ -83,10 +89,14 @@ class TokensToAST{ //take a string input and uses it to convert tokens to an AST
       if (op == null){
         //console.log('d ');
         //console.log(token_stack);
-        term_list.push(this.terms(token_stack));
+        if (token_stack.length > 0) {
+          term_list.push(this.terms(token_stack));
+        }
         token_stack = [];
       } else {
-        term_list.push(this.terms(left))
+        if (left.length != 0){
+          term_list.push(this.terms(left))
+        }
         if (op == Token.SUB){
           if (right[0][0] == Token.NUM){
             right[0][1] *= -1
@@ -128,7 +138,7 @@ class TokensToAST{ //take a string input and uses it to convert tokens to an AST
         variable = 'CONSTANT'
       } else {
         coeff = 1;
-        power = 0;
+        power = 1;
         variable = tokens[0][1]
       }
     } else {
