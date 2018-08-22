@@ -28,6 +28,13 @@
         <div id="coeff">{{sol}}</div>
       </div>
     </div>
+    <my-canvas style="width:600px; height:600px;margin:auto;">
+      <function-graph
+      :solutions="solutions"
+      :critSolutions="critPoints"
+      :func="func">
+      </function-graph>
+    </my-canvas>
     <!--<p>{{result}}</p>
     <p>{{funcString}}</p>
     <p>{{terms}}</p>
@@ -37,22 +44,47 @@
 
 <script>
 import {TokensToAST} from './algorithm/TokensToAST'
+
+import MyCanvas from './components/MyCanvas.vue'
+import MyBox from './components/MyBox.vue'
+import FunctionGraph from './components/FunctionGraph.vue'
 //import {sendFunction} from './solutionRequests/sendFunction'
 export default {
   name: 'app',
+  components : {
+    MyCanvas,
+    MyBox,
+    FunctionGraph
+  },
   data () {
     return {
-      stringFunction: "-x^2+x+1",
-      funcString:"",
+      stringFunction: "x^2-x-1",
+      func: {'factors':[],'length':0},
+      funcString: "",
       validFunction: true,
       result: "",
-      error:"",
+      error: "",
       terms:[],
-      solutions:[],
-      termStrings:[],
-      msg: 'PolySolve: Simple algorithm to find roots for a polynomial function'
+      solutions: [],
+      funcId: -1,
+      critPoints: [],
+      termStrings: [],
+      msg: 'PolySolve: Simple algorithm to find roots for a polynomial function',
     }
   },
+  // Randomly selects a value to randomly increment or decrement every 16 ms.
+  // Not really important, just demonstrates that reactivity still works.
+  /*mounted () {
+    let dir = 1;
+    let selectedVal = Math.floor(Math.random() * this.chartValues.length);
+
+    setInterval(() => {
+      if (Math.random() > 0.995) dir *= -1;
+      if (Math.random() > 0.99) selectedVal = Math.floor(Math.random() * this.chartValues.length);
+
+      this.chartValues[selectedVal].val = Math.min(Math.max(this.chartValues[selectedVal].val + dir * 0.5, 0), 100);
+    }, 16);
+  },*/
   methods: {
     checkFunction: function(){
       let generate;
@@ -62,6 +94,7 @@ export default {
         this.error = 'TokensToAST error ' + e
       }
       let func = generate.factor();
+      this.func = func
       this.funcString = func.toString();
       this.terms = func.factors;
       this.formatTokens();
@@ -69,8 +102,25 @@ export default {
       .then(function(response){
         let results = response.body.solutions;
         let time = response.body.time;
-        this.solutions = results;
-        this.result = {'results':results,'time':time}
+        this.funcId = response.body.id;
+        const options = {
+          headers: {
+            "id": this.funcId
+          }
+        };
+        this.$http.get('https://random-project-testing.com/api/critical',{params: {'id': this.funcId}})
+        .then(function(response2){
+          this.critPoints = response2.body.results;
+          this.solutions = results; //called here so both set at same time
+          //console.log(this.critPoints);
+          //console.log(response2);
+        }, function(error){
+          //console.log("oops");
+          //console.log(error);
+          throw error
+        });
+        this.result = {'results':results,'time':time};
+        //console.log(this.solutions);
       }, function(error){
         throw error
         //console.log(error);
@@ -173,6 +223,9 @@ a {
   margin-right: auto;
   width: 50%;
   height: 120px;
+}
+#functionSolutions {
+  margin-bottom: 20px;
 }
 #functionTerm {
   /*padding-top: 20px;
