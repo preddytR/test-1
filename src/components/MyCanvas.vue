@@ -37,3 +37,9 @@ export default {
   }
 }
 </script>
+
+<style>
+.my-canvas-wrapper {
+  border: 2px dashed black;
+}
+</style>

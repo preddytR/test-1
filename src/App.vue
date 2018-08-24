@@ -58,7 +58,7 @@ export default {
   },
   data () {
     return {
-      stringFunction: "x^2-x-1",
+      stringFunction: "x^2-9",
       func: {'factors':[],'length':0},
       funcString: "",
       validFunction: true,

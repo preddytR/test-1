@@ -41,6 +41,7 @@ export default {
       height: 10,
       xPercentOffset: 0,
       yPercentOffset: 0,
+      scale: .5,
     }
   },
   methods: {
@@ -52,48 +53,13 @@ export default {
       }
       return total
     },
-    getedgeValues : function() {
-      let min_s_x = Math.min(...this.solutions);//Is zero if has no elements
-      let max_s_x = Math.max(...this.solutions);
-      let min_c_x = Math.min(...this.critSolutions);
-      let max_c_x = Math.min(...this.critSolutions);
-
-      let min_x, max_x;
-      if (min_s_x < min_c_x) {
-        min_x = min_s_x
-      } else {
-        min_x = max_c_x
-      }
-
-      if (max_s_x > max_c_x) {
-        max_x = max_s_x
-      } else {
-        max_x = max_c_x
-      }
-
-      let critYValues = [];
-      for (let crit of this.critSolutions) {
-        critYValues.push(this.evaluate(crit))
-      }
-
-      let min_y = Math.min(...critYValues);
-      let max_y = Math.min(...critYValues);
-
-      const edgeValues = {
-        "max_x": max_x,
-        "min_x": min_x,
-        "max_y": max_y,
-        "min_y": min_y,
-      };
-      return edgeValues
-    },
     establishScale: function(){
       const edgeValues = this.getedgeValues;
 
       if (edgeValues.max_x == edgeValues.min_x){
         this.width = Math.abs(edgeValues.max_x)
       } else {
-        this.width = Math.max(edgeValues.max_x -edgeValues.min_x,0);
+        this.width = Math.max(edgeValues.max_x - edgeValues.min_x,0);
       }
 
       this.xPercentOffset = edgeValues.min_x / this.width * 100;
@@ -105,8 +71,8 @@ export default {
       } else {
         this.height = Math.max(edgeValues.max_y - edgeValues.min_y,0);
       }
-      //this.height *= 1.1;
-      //this.width *= 1.1;
+      //this.height *= 2;
+      //this.width *= 2;
       //this.yPercentOffset = 0;//min_y / this.height;
       //console.log(this.width,this.height,this.xPercentOffset,this.yPercentOffset);
 
@@ -115,14 +81,15 @@ export default {
       let pointList = [];
       let solutionIndex = 0;
       let critIndex = 0;
-      let critYValues = []
+      let critYValues = [];
+      //let
       for (let crit of this.critSolutions) {
         critYValues.push(this.evaluate(crit))
       }
       //console.log("Y val");
-    //  console.log(critYValues);
+      //console.log(critYValues);
       if (this.solutions.length == 0 && this.critSolutions.length ==  0){
-        console.log("Do nothing");
+        //console.log("Do nothing");
       } else {
         let index = 0;
         let revSols = this.solutions.slice();
@@ -161,11 +128,30 @@ export default {
 
       return pointList
     },
+    xCoordToPercent: function(x) {
+      return (x / this.width) * 100 - this.xPercentOffset
+    },
+    yCoordToPercent: function(y) {
+      return (100 - ( y / this.height) * 100) / 2
+    },
     coordsToPercent: function([x,y]){
       //converts cartesian coordinates to an array of percentages
       //Range of output: [x:0-100,y:0-100]
       //As cartesian coords != canvas coords due to flipped y-axis, need to invert y-values
-      return [(x / this.width) * 100 - this.xPercentOffset, (100 - (y / this.height) * 100) / 2]
+      return [this.xCoordToPercent(x), this.yCoordToPercent(y)]
+    },
+    percentCoordToPix: function(percentX, percentY) {
+      const ctx = this.provider.context;
+      let offset = 50 * (1 - this.scale);
+      return [this.percentWidthToPix(percentX * this.scale + offset,ctx), this.percentHeightToPix(percentY * this.scale + offset, ctx)]
+    },
+    percentWidthToPix: function(percent, ctx) {
+      //const ctx = this.provider.context;
+      return Math.floor((ctx.canvas.width / 100) * percent)
+    },
+    percentHeightToPix: function(percent, ctx) {
+      //const ctx = this.provider.context;
+      return Math.floor((ctx.canvas.height / 100) * percent)
     },
     distance: function(x1,y1,x2,y2) {
       return Math.sqrt((x1-y1)**2 + (x2-y2)**2)
@@ -196,7 +182,7 @@ export default {
         let percentList = [];
         for (let coord of coordList) {
           //Need to inverse y-axis to conform to canvas coordinates
-          percentList.push([percentWidthToPix(coord[0], ctx), percentHeightToPix(coord[1],ctx)])
+          percentList.push(this.percentCoordToPix(...coord))
         }
         const calculated = {
           pixCoords: percentList,
@@ -214,28 +200,45 @@ export default {
 
     },
     calculatedAxis () {
+      //Gets coords for the x and y axis lines
+      //These will extend to the edges of the canvas and so must ignore any scaling factors (the zoom factor)
+      const edgeValues = this.getedgeValues;
       const ctx = this.provider.context;
 
-      const edgeValues = this.getedgeValues;
+      const y0 = this.yCoordToPercent(0); //Line where y=0
+      const y0Pix = this.percentHeightToPix(y0,ctx);
 
-      //The smallest axis generated will have range +/- 1
-      const left_limit = Math.min(edgeValues.min_x,-1);
-      const right_limit = Math.max(edgeValues.max_x,1);
-      const up_limit = Math.max(edgeValues.max_y,1);
-      const down_limit = Math.min(edgeValues.min_y,-1);
+      const x0 = -this.xPercentOffset + (this.xPercentOffset + 50)*(1-this.scale);//line where x=0
+      const x0Pix = this.percentWidthToPix(x0, ctx);
 
-      const xAxisStart = this.coordsToPercent([left_limit,0]);
-      const xAxisEnd = this.coordsToPercent([right_limit,0]);
-
-      const yAxisStart = this.coordsToPercent([0,up_limit]);
-      const yAxisEnd = this.coordsToPercent([0,down_limit]);
+       //We skip scaling the coords down
+      let xStartCoord = [0, y0Pix];
+      let xEndCoord = [ctx.canvas.width, y0Pix];
+      let yStartCoord = [x0Pix, 0];
+      let yEndCoord = [x0Pix, ctx.canvas.height];
 
       const calculated = {
-        xStart: percentCoordToPix(...xAxisStart, ctx),
-        xEnd: percentCoordToPix(...xAxisEnd, ctx),
-        yStart: percentCoordToPix(...yAxisStart, ctx),
-        yEnd: percentCoordToPix(...yAxisEnd, ctx),
+        xStart: xStartCoord,
+        xEnd: xEndCoord,
+        yStart: yStartCoord,
+        yEnd: yEndCoord,
       }
+      return calculated
+    },
+    calculatedBorder () {
+      //Should draw a border that contains the entire graph, from first to last root
+      const ctx = this.provider.context;
+      const leftBorderTop = this.percentCoordToPix(0,0); //Graph should remain centered
+      const width = ctx.canvas.width * this.scale;
+      const height = ctx.canvas.height * this.scale;
+
+      const calculated = {
+        x: leftBorderTop[0],
+        y: leftBorderTop[1],
+        w: width,
+        h: height,
+      }
+
       return calculated
     },
     getedgeValues () {
@@ -293,18 +296,19 @@ export default {
       const crit = newGraph.pixCoords[1];
       const end = newGraph.pixCoords[2];
       const above = (crit[1] > 0) ? 1: -1;
-      const cp1 = [(crit[0] + start[0]) / 2, crit[1] + (ctx.canvas.height / 6 - 2) * above] //2 for lineWidth
-      const cp2 = [(end[0] + crit[0]) / 2, crit[1] + (ctx.canvas.height / 6 - 2) * above]
-      console.log(ctx.canvas.height);
+      let offset = 50 * (1 - this.scale);
+      const cp1 = [(crit[0] + start[0]) / 2 , (crit[1] + (ctx.canvas.height / 6 - 2) * above*this.scale)] //2 for lineWidth
+      const cp2 = [(end[0] + crit[0]) / 2 , (crit[1] + (ctx.canvas.height / 6 - 2) * above*this.scale)]
+      /*console.log(ctx.canvas.height);
       console.log("Start, crit, end");
       console.log(start,crit,end);
       console.log("cp1, cp2");
-      console.log(cp1,cp2);
+      console.log(cp1,cp2);*/
 
       const root1 = newGraph.roundedRoots[0];
       const root2 = newGraph.roundedRoots[1];
-      console.log("Roots");
-      console.log(root1,root2);
+      /*onsole.log("Roots");
+      console.log(root1,root2);*/
       ctx.beginPath();
       ctx.moveTo(...start);
       // Clear the old area from the previous render. x,y,w,h
@@ -312,7 +316,7 @@ export default {
       // Clear the area for the text.
       //ctx.clearRect(newGraph.x, newGraph.y - 42, newGraph.w, 100);
 
-      // Draw the new rectangle.
+      // Draw the new graph.
       ctx.strokeStyle="#FF0000";
       ctx.lineWidth = 2;
       //ctx.arcTo(start[0],cp1[1],...cp1,100);
@@ -338,14 +342,15 @@ export default {
     ctx.lineTo(...newAxis.yEnd);
     ctx.strokeStyle="black";
     ctx.stroke();
-    //ctx.fillStyle = "red"//this.color;
-    //ctx.fill();
 
-    // Draw the text
-    /*ctx.fillStyle = '#000'
-    ctx.font = '28px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(Math.floor(this.value), (newGraph.x + (newGraph.w / 2)), newGraph.y - 14)*/
+    //Drawing Outline
+    const newBorder = this.calculatedBorder;
+
+    console.log("border");
+    console.log(newBorder);
+    ctx.rect(newBorder.x, newBorder.y, newBorder.w, newBorder.h);
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
   }
 }
 </script>
