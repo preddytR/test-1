@@ -36,16 +36,17 @@ export default {
       // render so that we can clear the area later.
       oldFunction: {
         pixCoords: null,
+        roundedRoots: null,
       },
-      width: 10,
-      height: 10,
+      width: 2,
+      height: 2,
       xPercentOffset: 0,
       yPercentOffset: 0,
-      scale: .5,
+      scale: .9,
     }
   },
   methods: {
-    evaluate: function(x_value){
+    evaluate: function(x_value) {
       let factors = this.func.factors;
       let total = 0;
       for (let factor of factors) {
@@ -53,16 +54,22 @@ export default {
       }
       return total
     },
-    establishScale: function(){
+    establishScale: function() {
       const edgeValues = this.getedgeValues;
 
-      if (edgeValues.max_x == edgeValues.min_x){
+      if (edgeValues.max_x == edgeValues.min_x) {
         this.width = Math.abs(edgeValues.max_x)
       } else {
         this.width = Math.max(edgeValues.max_x - edgeValues.min_x,0);
       }
+      console.log("edge");
+      console.log(edgeValues);
+      if (edgeValues.min_x == edgeValues.max_x) { //
+        this.xPercentOffset = edgeValues.min_x / this.width * 100+ 50;
+      } else {
+        this.xPercentOffset = edgeValues.min_x / this.width * 100;
+      }
 
-      this.xPercentOffset = edgeValues.min_x / this.width * 100;
 
 
 
@@ -132,9 +139,9 @@ export default {
       return (x / this.width) * 100 - this.xPercentOffset
     },
     yCoordToPercent: function(y) {
-      return (100 - ( y / this.height) * 100) / 2
+      return 50 * (1 -  y / this.height)
     },
-    coordsToPercent: function([x,y]){
+    coordsToPercent: function([x,y]) {
       //converts cartesian coordinates to an array of percentages
       //Range of output: [x:0-100,y:0-100]
       //As cartesian coords != canvas coords due to flipped y-axis, need to invert y-values
@@ -142,7 +149,7 @@ export default {
     },
     percentCoordToPix: function(percentX, percentY) {
       const ctx = this.provider.context;
-      let offset = 50 * (1 - this.scale);
+      let offset = 50 * (1 - this.scale);//Alternatively: coord = scale*(percent-50)+50
       return [this.percentWidthToPix(percentX * this.scale + offset,ctx), this.percentHeightToPix(percentY * this.scale + offset, ctx)]
     },
     percentWidthToPix: function(percent, ctx) {
@@ -165,7 +172,6 @@ export default {
       if (points.length != 0){
         //console.log("Points");
         //console.log(points);
-        this.establishScale();
         let coordList = [];
         let rootList = [];//list of rounded roots to be displayed as labels
         // Turn start / end percentages into x, y, width, height in pixels.
@@ -206,9 +212,10 @@ export default {
       const ctx = this.provider.context;
 
       const y0 = this.yCoordToPercent(0); //Line where y=0
-      const y0Pix = this.percentHeightToPix(y0,ctx);
+      const y0Pix = this.percentHeightToPix(y0, ctx);
 
-      const x0 = -this.xPercentOffset + (this.xPercentOffset + 50)*(1-this.scale);//line where x=0
+      const x0 = -this.xPercentOffset + (this.xPercentOffset + 50)*(1 - this.scale);//line where x=0
+      console.log("x0",x0);
       const x0Pix = this.percentWidthToPix(x0, ctx);
 
        //We skip scaling the coords down
@@ -242,32 +249,35 @@ export default {
       return calculated
     },
     getedgeValues () {
-      let min_s_x = Math.min(...this.solutions);//Is zero if has no elements
-      let max_s_x = Math.max(...this.solutions);
-      let min_c_x = Math.min(...this.critSolutions);
-      let max_c_x = Math.min(...this.critSolutions);
+      let min_x, max_x, min_y, max_y;
+      if (this.solutions.length != 0 || this.critSolutions.length != 0) {
+        let min_s_x = Math.min(...this.solutions);//Is zero if has no elements
+        let max_s_x = Math.max(...this.solutions);
+        let min_c_x = Math.min(...this.critSolutions);
+        let max_c_x = Math.min(...this.critSolutions);
 
-      let min_x, max_x;
-      if (min_s_x < min_c_x) {
-        min_x = min_s_x
+        if (min_s_x < min_c_x) {
+          min_x = min_s_x
+        } else {
+          min_x = max_c_x
+        }
+
+        if (max_s_x > max_c_x) {
+          max_x = max_s_x
+        } else {
+          max_x = max_c_x
+        }
+
+        let critYValues = [];
+        for (let crit of this.critSolutions) {
+          critYValues.push(this.evaluate(crit))
+        }
+
+        min_y = Math.min(...critYValues);
+        max_y = Math.min(...critYValues);
       } else {
-        min_x = max_c_x
+        [min_x, max_x, min_y, max_y] = [-1, 1, -1, 1];
       }
-
-      if (max_s_x > max_c_x) {
-        max_x = max_s_x
-      } else {
-        max_x = max_c_x
-      }
-
-      let critYValues = [];
-      for (let crit of this.critSolutions) {
-        critYValues.push(this.evaluate(crit))
-      }
-
-      let min_y = Math.min(...critYValues);
-      let max_y = Math.min(...critYValues);
-
       const edgeValues = {
         "max_x": max_x,
         "min_x": min_x,
@@ -284,21 +294,24 @@ export default {
     if(!this.provider.context) return;
     const ctx = this.provider.context;
     console.log("Updating");
-  //  console.log(this.solutions);
+    // console.log(this.solutions);
     //console.log(this.critSolutions);
     //console.log(this.orderPoints());
     // Keep a reference to the Graph used in the previous render call.
     //const oldGraph = this.oldGraph
     // Calculate the new Graph. (Computed properties update on-demand.)
+    this.establishScale();
     const newGraph = this.calculatedGraph;
+
     if (newGraph != null){
       const start = newGraph.pixCoords[0];
       const crit = newGraph.pixCoords[1];
       const end = newGraph.pixCoords[2];
       const above = (crit[1] > 0) ? 1: -1;
-      let offset = 50 * (1 - this.scale);
-      const cp1 = [(crit[0] + start[0]) / 2 , (crit[1] + (ctx.canvas.height / 6 - 2) * above*this.scale)] //2 for lineWidth
-      const cp2 = [(end[0] + crit[0]) / 2 , (crit[1] + (ctx.canvas.height / 6 - 2) * above*this.scale)]
+
+      const cpY = crit[1] + (ctx.canvas.height / 6 - 2) * above * this.scale;
+      const cp1 = [(crit[0] + start[0]) / 2 , cpY] //2 for lineWidth
+      const cp2 = [(end[0] + crit[0]) / 2 , cpY]
       /*console.log(ctx.canvas.height);
       console.log("Start, crit, end");
       console.log(start,crit,end);
@@ -307,21 +320,17 @@ export default {
 
       const root1 = newGraph.roundedRoots[0];
       const root2 = newGraph.roundedRoots[1];
-      /*onsole.log("Roots");
+      /*console.log("Roots");
       console.log(root1,root2);*/
       ctx.beginPath();
       ctx.moveTo(...start);
+
       // Clear the old area from the previous render. x,y,w,h
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      // Clear the area for the text.
-      //ctx.clearRect(newGraph.x, newGraph.y - 42, newGraph.w, 100);
 
       // Draw the new graph.
       ctx.strokeStyle="#FF0000";
       ctx.lineWidth = 2;
-      //ctx.arcTo(start[0],cp1[1],...cp1,100);
-      //ctx.arcTo(cp1[0],cp1[1],...end,(rad2+rad1)/4);
-      //ctx.quadraticCurveTo(...cp1, ...end);
       ctx.bezierCurveTo(...cp1,...cp2,...end);
       ctx.stroke();
 
@@ -336,8 +345,12 @@ export default {
     const newAxis = this.calculatedAxis;
     ctx.beginPath();
     ctx.lineWidth = 1;
+    console.log("axis");
+    console.log(newAxis);
+    //x-axis
     ctx.moveTo(...newAxis.xStart);
     ctx.lineTo(...newAxis.xEnd);
+    //y-axis
     ctx.moveTo(...newAxis.yStart);
     ctx.lineTo(...newAxis.yEnd);
     ctx.strokeStyle="black";
@@ -346,8 +359,8 @@ export default {
     //Drawing Outline
     const newBorder = this.calculatedBorder;
 
-    console.log("border");
-    console.log(newBorder);
+    /*console.log("border");
+    console.log(newBorder);*/
     ctx.rect(newBorder.x, newBorder.y, newBorder.w, newBorder.h);
     ctx.strokeStyle = "blue";
     ctx.stroke();
