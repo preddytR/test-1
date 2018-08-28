@@ -68,6 +68,7 @@ export default {
       solutions: [],
       funcId: -1,
       critPoints: [],
+      haveAllInfo: false,
       termStrings: [],
       msg: 'PolySolve: Simple algorithm to find roots for a polynomial function',
     }
@@ -93,6 +94,7 @@ export default {
       } catch (e) {
         this.error = 'TokensToAST error ' + e
       }
+      this.haveAllInfo = false;
       let func = generate.factor();
       this.func = func
       this.funcString = func.toString();
