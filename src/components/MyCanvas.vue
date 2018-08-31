@@ -41,5 +41,9 @@ export default {
 <style>
 .my-canvas-wrapper {
   border: 2px dashed black;
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: -10;
 }
 </style>

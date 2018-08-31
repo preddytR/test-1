@@ -10,8 +10,6 @@ class Convert {
     this.ctx = ctx;
     this.xPercentOffset = xPercentOffset;
     this.scale = scale;
-    this.percentWidthToPix = (percent) => Math.floor((this.ctx.canvas.width / 100) * percent)
-    this.percentHeightToPix = (percent) => Math.floor((this.ctx.canvas.height / 100) * percent);
   }
   xCoordToPercent(x) {
     return (x / this.width) * 100 - this.xPercentOffset
@@ -25,33 +23,16 @@ class Convert {
     //As cartesian coords != canvas coords due to flipped y-axis, need to invert y-values
     return [this.xCoordToPercent(x), this.yCoordToPercent(y)]
   }
+  percentWidthToPix(percent) {
+    return Math.floor((this.ctx.canvas.width / 100) * percent)
+  }
+  percentHeightToPix(percent) {
+    return Math.floor((this.ctx.canvas.height / 100) * percent)
+  }
   percentCoordToPix(percentX, percentY) {
     let offset = 50 * (1 - this.scale);//Alternatively: coord = scale*(percent-50)+50
     return [this.percentWidthToPix(percentX * this.scale + offset), this.percentHeightToPix(percentY * this.scale + offset)]
   }
 }
 
-let xCoordToPercent = function(x) {
-  return (x / this.width) * 100 - this.xPercentOffset
-}
-
-let yCoordToPercent = function(y) {
-  return 50 * (1 -  y / this.height)
-}
-
-let coordsToPercent = function([x,y]) {
-  //converts cartesian coordinates to an array of percentages
-  //Range of output: [x:0-100,y:0-100]
-  //As cartesian coords != canvas coords due to flipped y-axis, need to invert y-values
-  return [this.xCoordToPercent(x), this.yCoordToPercent(y)]
-}
-
-let percentCoordToPix = function(percentX, percentY) {
-  const ctx = this.provider.context;
-  let offset = 50 * (1 - this.scale);//Alternatively: coord = scale*(percent-50)+50
-  return [percentWidthToPix(percentX * this.scale + offset,ctx), percentHeightToPix(percentY * this.scale + offset, ctx)]
-}
-
-export {Convert,
-        percentWidthToPix,
-        percentHeightToPix}
+export {Convert}

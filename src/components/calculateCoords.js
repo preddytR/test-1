@@ -8,23 +8,25 @@ class Calculate {
     this.convert = convert;
     this.solutions = solutions;
     this.critSolutions = critSolutions;
+    this.oldSols = solutions;
+    this.oldCrits = critSolutions;
     this.func = func;
     this.ctx = ctx;
     this.scale = this.convert.scale;
     this.xPercentOffset = this.convert.xPercentOffset;
+
+    this.orderedPoints = this.orderPoints();//getter function
     //let this.convert = new Convert(this.width, this.height, this.provider.context, this.xPercentOffset);
   }
   get Graph() {
     //const this.ctx = this.provider.context
-
-    const points = this.orderPoints();
-    if (points.length != 0){
+    if (this.orderedPoints.length != 0){
       /*console.log("Points");
-      console.log(points);*/
+      console.log(this.orderedPoints);*/
       let coordList = [];
       let rootList = [];//list of rounded roots to be displayed as labels
       // Turn start / end percentages into x, y, width, height in pixels.
-      for (let point of points) {
+      for (let point of this.orderedPoints) {
         if (point.Crit != undefined) {
           coordList.push(this.convert.coordsToPercent(point.Crit))
         } else {
@@ -105,11 +107,9 @@ class Calculate {
     }
     //console.log("Y val");
     //console.log(critYValues);
-    if (this.solutions.length == 0 && this.critSolutions.length ==  0){
-      //console.log("Do nothing");
-    } else {
+    if (this.solutions.length > 0 && this.critSolutions.length > 0) {
       let index = 0;
-      let revSols = this.solutions.slice();
+      let revSols = this.solutions.slice();//copy
       revSols.reverse();
       let revCrit = this.critSolutions.slice();
       revCrit.reverse();
@@ -141,6 +141,8 @@ class Calculate {
           console.log("Oof");
         }
       }
+    } else {
+      console.log("yikes");
     }
 
     return pointList
@@ -152,6 +154,30 @@ class Calculate {
       total += factor.coeff * (x_value ** factor.power)
     }
     return total
+  }
+  convertToBeziers() {
+    let curveList = []; //list of curve objects
+    if (this.solutions.length == 0 && this.critSolutions.length ==  0){
+      //console.log("Do nothing");
+    } else if (this.solutions.length == 0 && this.critSolutions.length > 0) {
+      //No real solutions but need to draw
+    } else if (this.solutions.length == 1 && this.critSolutions.length == 0) {
+      //A linear function
+      let x_intercept = this.solutions[0];
+      let x_plus_1 = x_intercept + 1;
+      let f_x_plus_1 = this.evaluate(x_plus_1);
+
+      let functionPart = {
+        type: 'Linear',
+        xIntercept: x_intercept,
+        xPlus1: x_plus_1,
+        fXplus1: f_x_plus_1
+      }
+      curveList.push(functionPart);
+
+    } else if (this.solutions.length > 0 && this.critSolutions.length > 0) {
+      //will have an orderedPoints list to use
+    }
   }
 }
 

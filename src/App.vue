@@ -28,11 +28,12 @@
         <div id="coeff">{{sol}}</div>
       </div>
     </div>
-    <my-canvas style="width:600px; height:600px;margin:auto;">
+    <my-canvas style="width:100%; height:100%;margin:auto;">
       <function-graph
       :solutions="solutions"
       :critSolutions="critPoints"
-      :func="func">
+      :func="func"
+      >
       </function-graph>
     </my-canvas>
     <!--<p>{{result}}</p>

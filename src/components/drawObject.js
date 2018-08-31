@@ -8,6 +8,7 @@ class Draw {
     this.calculated = calculate;
     this.ctx = ctx;
     this.scale = scale;
+    this.lineWidth = 5;
   }
   Graph() {
     const newGraph = this.calculated.Graph;
@@ -16,18 +17,20 @@ class Draw {
       const start = newGraph.pixCoords[0];
       const crit = newGraph.pixCoords[1];
       const end = newGraph.pixCoords[2];
-      const above = (crit[1] > 0) ? 1: -1;
-      console.log("graph");
-      console.log(newGraph);
+      const above = (crit[1] > this.ctx.canvas.height / 2) ? 1: -1;//May need to change how y0 on canvas defined
+      /*console.log("graph");
+      console.log(newGraph);*/
 
-      const cpY = crit[1] + (this.ctx.canvas.height / 6 - 2) * above * this.scale;
-      const cp1 = [(crit[0] + start[0]) / 2 , cpY] //2 for lineWidth
+      const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth) * above;
+      const cpY = crit[1] + adjust;
+      const cp1 = [(crit[0] + start[0]) / 2 , cpY]
       const cp2 = [(end[0] + crit[0]) / 2 , cpY]
       /*console.log(this.ctx.canvas.height);
       console.log("Start, crit, end");
       console.log(start,crit,end);
       console.log("cp1, cp2");
-      console.log(cp1,cp2);*/
+      console.log(cp1,cp2);
+      console.log("adjust",adjust);*/
 
       const root1 = newGraph.roundedRoots[0];
       const root2 = newGraph.roundedRoots[1];
@@ -36,12 +39,9 @@ class Draw {
       this.ctx.beginPath();
       this.ctx.moveTo(...start);
 
-      // Clear the old area from the previous render. x,y,w,h
-      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-
       // Draw the new graph.
       this.ctx.strokeStyle="#FF0000";
-      this.ctx.lineWidth = 2;
+      this.ctx.lineWidth = this.lineWidth;
       this.ctx.bezierCurveTo(...cp1,...cp2,...end);
       this.ctx.stroke();
 
@@ -66,8 +66,8 @@ class Draw {
     const newAxis = this.calculated.Axis;
     this.ctx.beginPath();
     this.ctx.lineWidth = 1;
-    console.log("axis");
-    console.log(newAxis);
+    //console.log("axis");
+    //console.log(newAxis);
     //x-axis
     this.ctx.moveTo(...newAxis.xStart);
     this.ctx.lineTo(...newAxis.xEnd);
