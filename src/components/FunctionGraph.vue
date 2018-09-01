@@ -78,12 +78,13 @@ export default {
       this.establishScale();
 
       if (this.checkViewModified()) {
+        let canvas = this.provider.context.canvas;
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
       }
 
       if (this.draw == null || this.checkFuncModified() ) {
-        console.log("updating function");
+        //console.log("updating function");
         this.newDrawObject()
       }
 
@@ -144,9 +145,9 @@ export default {
       return window.innerHeight != canvas.height || window.innerWidth != canvas.width
     },
     checkFuncModified: function() {
-      console.log("checking func");
-      console.log(this.func);
-      console.log(this.oldFunction.func);
+      //console.log("checking func");
+      //console.log(this.func);
+      //console.log(this.oldFunction.func);
       let modified = false;
       if (this.func !== this.oldFunction.func) {
         this.oldFunction.func = this.func;

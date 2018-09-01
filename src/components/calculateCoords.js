@@ -10,46 +10,61 @@ class Calculate {
     this.critSolutions = critSolutions;
     this.oldSols = solutions;
     this.oldCrits = critSolutions;
+    if (solutions != undefined) {
+      this.rootCount = this.solutions.length
+    } else {
+      this.rootCount = -1
+    }
+    if (critSolutions != undefined) {
+      this.critCount = this.critSolutions.length;
+    } else {
+      this.critCount = -1
+    }
+
     this.func = func;
     this.ctx = ctx;
     this.scale = this.convert.scale;
     this.xPercentOffset = this.convert.xPercentOffset;
 
-    this.orderedPoints = this.orderPoints();//getter function
+    let ordered = this.orderPoints();
+    /*console.log("order");
+    console.log(this.solutions);
+    console.log(this.critSolutions);
+    console.log(ordered);*/
+    this.bezierList = this.convertToBeziers(ordered);
+    //console.log("beziers");
+    //console.log(this.bezierList);
     //let this.convert = new Convert(this.width, this.height, this.provider.context, this.xPercentOffset);
   }
-  get Graph() {
-    //const this.ctx = this.provider.context
-    if (this.orderedPoints.length != 0){
-      /*console.log("Points");
-      console.log(this.orderedPoints);*/
-      let coordList = [];
-      let rootList = [];//list of rounded roots to be displayed as labels
-      // Turn start / end percentages into x, y, width, height in pixels.
-      for (let point of this.orderedPoints) {
-        if (point.Crit != undefined) {
-          coordList.push(this.convert.coordsToPercent(point.Crit))
+  get Curves() {
+    if (this.bezierList.length > 0) {
+      let convertedCurveList = [];
+      let rootList = [];
+      for (let curve of this.bezierList) {
+        let convertedCurve = {};
+        if (curve.type == 'linear') {
+          console.log('linear X');
+        } else if (curve.type == 'Cubic') {
+          convertedCurve.type = 'Cubic';
+          convertedCurve.left = this.convert.cartesianCoordsToCanvas(curve.leftX,curve.leftY);
+          convertedCurve.middle = this.convert.cartesianCoordsToCanvas(curve.middleX, curve.middleY);
+          convertedCurve.right = this.convert.cartesianCoordsToCanvas(curve.rightX, curve.rightY);
+
+          const root1 = Math.round(curve.leftX*100)/100;
+          const root2 = Math.round(curve.rightX*100)/100;
+
+          convertedCurve.root1 = root1;
+          convertedCurve.root2 = root2;
+          rootList.push(root1);
+          rootList.push(root2);
+
+          convertedCurveList.push(convertedCurve)
         } else {
-          rootList.push(Math.round(point.Root*100)/100);
-          coordList.push(this.convert.coordsToPercent([point.Root,0]))
+          console.log('Oooof');
         }
       }
-      //console.log("Percent");
-      //console.log(coordList);
-      let percentList = [];
-      for (let coord of coordList) {
-        //Need to inverse y-axis to conform to canvas coordinates
-        percentList.push(this.convert.percentCoordToPix(...coord))
-      }
-      const calculated = {
-        pixCoords: percentList,
-        roundedRoots: rootList,
-      }
-      //console.log("Coords");
-      //console.log(percentList);
-      // Yes yes, side-effects. This lets us cache the Graph dimensions of the previous render.
-      // before we re-calculate calculatedGraph the next render.
-      this.oldFunction = calculated
+      const calculated = convertedCurveList;
+
       return calculated
     } else {
       return null
@@ -107,7 +122,7 @@ class Calculate {
     }
     //console.log("Y val");
     //console.log(critYValues);
-    if (this.solutions.length > 0 && this.critSolutions.length > 0) {
+    if (this.rootCount > 0 && this.critCount > 0) {
       let index = 0;
       let revSols = this.solutions.slice();//copy
       revSols.reverse();
@@ -120,7 +135,7 @@ class Calculate {
       let nextYCrit = revCritY.pop();
       //Basically a variation of merge sort, assuming the sols and crit sols have
       //already been sorted
-      while (pointList.length < this.solutions.length + this.critSolutions.length) {
+      while (pointList.length < this.rootCount + this.critCount) {
         if (nextRoot != undefined && nextCrit != undefined) {
           if (nextRoot < nextCrit) {
             pointList.push({"Root": nextRoot});
@@ -155,29 +170,63 @@ class Calculate {
     }
     return total
   }
-  convertToBeziers() {
+  convertToBeziers(orderedPoints) {
+    //converts an ordered list of points to a list of peicewise bezier curves or lines fitting those points
     let curveList = []; //list of curve objects
-    if (this.solutions.length == 0 && this.critSolutions.length ==  0){
+    if (this.rootCount == 0 && this.critCount ==  0){
       //console.log("Do nothing");
-    } else if (this.solutions.length == 0 && this.critSolutions.length > 0) {
+    } else if (this.rootCount == 0 && this.critCount > 0) {
       //No real solutions but need to draw
-    } else if (this.solutions.length == 1 && this.critSolutions.length == 0) {
+    } else if (this.rootCount == 1 && this.critCount == 0) {
       //A linear function
-      let x_intercept = this.solutions[0];
-      let x_plus_1 = x_intercept + 1;
-      let f_x_plus_1 = this.evaluate(x_plus_1);
+      let x_intercept = orderedPoints[0].Root//this.solutions[0];
+      console.log("x-int");
+      console.log(x_intercept);
+      curveList.push(this.linearCurve(x_intercept));
 
-      let functionPart = {
-        type: 'Linear',
-        xIntercept: x_intercept,
-        xPlus1: x_plus_1,
-        fXplus1: f_x_plus_1
-      }
-      curveList.push(functionPart);
-
-    } else if (this.solutions.length > 0 && this.critSolutions.length > 0) {
+    } else if (this.rootCount > 0 && this.critCount > 0) {
       //will have an orderedPoints list to use
+      //console.log("extra");
+      let index = 0;
+      //look at three points at a time
+      while (index < orderedPoints.length - 2) {
+        let [p1, p2, p3] = orderedPoints.slice(index, index+3);
+        //console.log("triple points");
+        //console.log(p1);
+        //console.log(p2);
+        //console.log(p3);
+        if (p1.Root != undefined && p2.Crit != undefined && p3.Root != undefined) {
+          curveList.push(this.quadraticCurve(p1,p2,p3))
+        }
+        index += 2
+      }
     }
+    return curveList
+  }
+  linearCurve(point) {
+    let x_plus_1 = x_intercept + 1;
+    let f_x_plus_1 = this.evaluate(x_plus_1);
+
+    const functionPart = {
+      type: 'Linear',
+      xIntercept: x_intercept,
+      xPlus1: x_plus_1,
+      fXplus1: f_x_plus_1
+    }
+    return functionPart
+  }
+  quadraticCurve(root1, crit, root2) {
+    //actually drawn w cubic bezier but w/ever
+    const functionPart = {
+      type: 'Cubic',
+      leftX: root1.Root,
+      leftY: 0,
+      middleX: crit.Crit[0],
+      middleY: crit.Crit[1],
+      rightX: root2.Root,
+      rightY: 0
+    }
+    return functionPart
   }
 }
 

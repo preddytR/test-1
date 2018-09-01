@@ -33,6 +33,9 @@ class Convert {
     let offset = 50 * (1 - this.scale);//Alternatively: coord = scale*(percent-50)+50
     return [this.percentWidthToPix(percentX * this.scale + offset), this.percentHeightToPix(percentY * this.scale + offset)]
   }
+  cartesianCoordsToCanvas(x, y) {
+    return this.percentCoordToPix(...this.coordsToPercent([x,y]))
+  }
 }
 
 export {Convert}
