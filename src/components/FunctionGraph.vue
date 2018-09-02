@@ -46,7 +46,7 @@ export default {
       height: 2,
       xPercentOffset: 0,
       yPercentOffset: 0,
-      scale: 1, //Both x and y direction - zoom factor
+      scale: .75, //Both x and y direction - zoom factor
       windowScale: 1, //How much of the webpage the canvas element should take
       draw: null,
       calculated: null,
@@ -168,7 +168,20 @@ export default {
   computed: {
     getedgeValues () {
       let min_x, max_x, min_y, max_y;
-      if (this.solutions.length != 0 || this.critSolutions.length != 0) {
+      if (this.solutions.length == 1 && this.critSolutions.length == 1) {
+        //Usually a cubic/ other graph w inflection point
+        const solX = this.solutions[0];
+        const critX = this.critSolutions[0];
+        const critY = this.evaluate(critX);
+        const mirrorX = 2 * critX - solX;
+        const mirrorY = 2 * critY
+        
+        min_x = Math.min(mirrorX, solX, critX);
+        max_x = Math.max(mirrorX, solX, critX);
+        min_y = Math.min(mirrorY, 0, critY);
+        max_y = Math.max(mirrorY, 0, critY);
+
+      } else if (this.solutions.length != 0 || this.critSolutions.length != 0) {
         let min_s_x = Math.min(...this.solutions);//Is zero if has no elements
         let max_s_x = Math.max(...this.solutions);
         let min_c_x = Math.min(...this.critSolutions);
@@ -202,6 +215,8 @@ export default {
         "max_y": max_y,
         "min_y": min_y,
       };
+      console.log("edge");
+      console.log(edgeValues);
       return edgeValues
     },
   },

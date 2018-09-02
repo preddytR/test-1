@@ -1,32 +1,41 @@
 <template>
   <div id="app">
-    <h1>{{ msg }}</h1>
-    <span>Enter a polynomial function to solve: </span>
-    <div id="InputBar">
-      <input name="poly" v-model="stringFunction" type="text" placeholder="e.g 4x^2+2x+3">
-      <button name="solve" @click="checkFunction">Solve</button>
+    <div id="hideToggle" @mouseover="dimmed = true" @mouseleave="dimmed = false">
+      <i class="fa fa-eye" @click="visible = !visible"></i>
     </div>
-    <div id="functionPreview">
-      <div id="functionTerm">f(x)</div>
-      <div id="functionTerm" v-if="stringFunction.length > 0 && validFunction">=</div><!--&ne;-->
-      <div id="termContainer" v-for="term in termStrings">
-        <div id="functionTerm" v-if="termStrings.indexOf(term) != 0 || !term.positive">
-          <div id="sign" v-if="term.positive">&plus;</div>
-          <div id="sign" v-else>&minus;</div>
-        </div>
-        <div id="functionTerm">
-          <div id="coeff" v-if="term.coeff != ''">{{term.coeff}}</div>
-          <div id="var" v-if="term.variable != ''">{{term.variable}}</div>
-          <div id="power" v-if="term.power != ''"><sup>{{term.power}}</sup></div>
+    <div v-if="visible" :class="{isDimmed:dimmed}">
+      <h1>{{ msg }}</h1>
+      <span>Enter a polynomial function to solve: </span>
+      <div id="InputBar">
+        <input name="poly" v-model="stringFunction" type="text" placeholder="e.g 4x^2+2x+3">
+        <button name="solve" @click="checkFunction">Solve</button>
+      </div>
+      <div id="functionPreview">
+        <div id="functionTerm">f(x)</div>
+        <div id="functionTerm" v-if="stringFunction.length > 0 && validFunction">=</div><!--&ne;-->
+        <div id="termContainer" v-for="term in termStrings">
+          <div id="functionTerm" v-if="termStrings.indexOf(term) != 0 || !term.positive">
+            <div id="sign" v-if="term.positive">&plus;</div>
+            <div id="sign" v-else>&minus;</div>
+          </div>
+          <div id="functionTerm">
+            <div id="coeff" v-if="term.coeff != ''">{{term.coeff}}</div>
+            <div id="var" v-if="term.variable != ''">{{term.variable}}</div>
+            <div id="power" v-if="term.power != ''"><sup>{{term.power}}</sup></div>
+          </div>
         </div>
       </div>
-    </div>
-    <div id="functionSolutions" v-if="solutions.length != 0">
-      <div id="functionTerm">x</div>
-      <div id="functionTerm">=</div>
-      <div id="functionTerm" v-for="sol in solutions">
-        <div id="coeff">{{sol}}</div>
+      <div id="functionSolutions" v-if="solutions.length != 0">
+        <div id="functionTerm">x</div>
+        <div id="functionTerm">=</div>
+        <div id="functionTerm" v-for="sol in solutions">
+          <div id="coeff">{{sol}}</div>
+        </div>
       </div>
+      <!--<p>{{result}}</p>
+      <p>{{funcString}}</p>
+      <p>{{terms}}</p>
+      <p>{{error}}</p>-->
     </div>
     <my-canvas style="width:100%; height:100%;margin:auto;">
       <function-graph
@@ -36,10 +45,6 @@
       >
       </function-graph>
     </my-canvas>
-    <!--<p>{{result}}</p>
-    <p>{{funcString}}</p>
-    <p>{{terms}}</p>
-    <p>{{error}}</p>-->
   </div>
 </template>
 
@@ -59,7 +64,9 @@ export default {
   },
   data () {
     return {
-      stringFunction: "x^2-9",
+      visible: true,
+      dimmed: false,
+      stringFunction: "x^3-2x+24",
       func: {'factors':[],'length':0},
       funcString: "",
       validFunction: true,
@@ -170,6 +177,21 @@ export default {
 </script>
 
 <style lang="scss">
+
+.isDimmed {
+  opacity: 0.5;
+}
+
+#hideToggle {
+  position: fixed;
+  left: 4px;
+  top: 4px;
+  width: 1em;
+  padding: 1px;
+  border: 1px solid grey;
+  box-shadow: 2px 2px 1px;
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

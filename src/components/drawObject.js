@@ -28,14 +28,15 @@ class Draw {
     const start = curve.left;
     const crit = curve.middle;
     const end = curve.right;
-    const above = (crit[1] > this.ctx.canvas.height / 2) ? 1: -1;//May need to change how y0 on canvas defined
+    const above1 = (crit[1] > start[1]) ? 1: -1;//May need to change how y0 on canvas defined
+    const above2 = (crit[1] > end[1]) ? 1: -1;
     //console.log("curve");
     //console.log(curve);
 
-    const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth) * above;
+    const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth);
     const cpY = crit[1] + adjust;
-    const cp1 = [(crit[0] + start[0]) / 2 , cpY];
-    const cp2 = [(end[0] + crit[0]) / 2 , cpY];
+    const cp1 = [(crit[0] + start[0]) / 2 , crit[1] + adjust * above1];
+    const cp2 = [(end[0] + crit[0]) / 2 , crit[1] + adjust * above2];
     //console.log(this.ctx.canvas.height);
     //console.log("Start, crit, end");
     //console.log(start,crit,end);
@@ -43,8 +44,7 @@ class Draw {
     //console.log(cp1,cp2);
     //console.log("adjust",adjust);
 
-    const root1 = curve.root1;
-    const root2 = curve.root2;
+
     //console.log("Roots");
     //console.log(root1,root2);
     this.ctx.beginPath();
@@ -57,10 +57,17 @@ class Draw {
     this.ctx.stroke();
 
     //Drawing labels
+    const root1 = curve.root1;
+    const root2 = curve.root2;
     this.ctx.font = "20px Verdana";
     this.ctx.textBaseline = "top";
-    this.ctx.fillText(root1,...start);
-    this.ctx.fillText(root2,...end);
+    if (root1 != null) {
+      this.ctx.fillText(root1,...start);
+    }
+    if (root2 != null) {
+      this.ctx.fillText(root2,...end);
+    }
+
 
   }
   Border() {
