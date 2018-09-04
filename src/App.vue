@@ -40,7 +40,7 @@
     <my-canvas style="width:100%; height:100%;margin:auto;">
       <function-graph
       :solutions="solutions"
-      :critSolutions="critPoints"
+      :mergedPoints="mergedPoints"
       :func="func"
       >
       </function-graph>
@@ -75,7 +75,7 @@ export default {
       terms:[],
       solutions: [],
       funcId: -1,
-      critPoints: [],
+      mergedPoints: [],
       haveAllInfo: false,
       termStrings: [],
       msg: 'PolySolve: Simple algorithm to find roots for a polynomial function',
@@ -120,9 +120,11 @@ export default {
         };
         this.$http.get('https://random-project-testing.com/api/critical',{params: {'id': this.funcId}})
         .then(function(response2){
-          this.critPoints = response2.body.results;
+          this.mergedPoints = response2.body.merged;
           this.solutions = results; //called here so both set at same time
-          //console.log(this.critPoints);
+          console.log("db");
+          console.log(this.mergedPoints);
+          console.log(results);
           //console.log(response2);
         }, function(error){
           //console.log("oops");

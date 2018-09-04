@@ -1,22 +1,16 @@
-import {Convert,
-        percentWidthToPix,
-        percentHeightToPix} from './convertCoords'
-
 
 class Calculate {
-  constructor(convert, solutions, critSolutions, func, ctx) {
+  constructor(convert, solutions, mergedPoints, func, ctx) {
     this.convert = convert;
     this.solutions = solutions;
-    this.critSolutions = critSolutions;
-    this.oldSols = solutions;
-    this.oldCrits = critSolutions;
+    this.mergedPoints = mergedPoints;
     if (solutions != undefined) {
       this.rootCount = this.solutions.length
     } else {
       this.rootCount = -1
     }
-    if (critSolutions != undefined) {
-      this.critCount = this.critSolutions.length;
+    if (mergedPoints != undefined) {
+      this.critCount = this.mergedPoints.length - this.solutions.length;
     } else {
       this.critCount = -1
     }
@@ -26,12 +20,12 @@ class Calculate {
     this.scale = this.convert.scale;
     this.xPercentOffset = this.convert.xPercentOffset;
 
-    let ordered = this.orderPoints();
+    //let ordered = this.orderPoints();
     /*console.log("order");
     console.log(this.solutions);
     console.log(this.critSolutions);
     console.log(ordered);*/
-    this.bezierList = this.convertToBeziers(ordered);
+    this.bezierList = this.convertToBeziers(mergedPoints);
     //console.log("beziers");
     //console.log(this.bezierList);
     //let this.convert = new Convert(this.width, this.height, this.provider.context, this.xPercentOffset);
@@ -48,10 +42,6 @@ class Calculate {
           convertedCurve.left = this.convert.cartesianCoordsToCanvas(curve.leftX,curve.leftY);
           convertedCurve.middle = this.convert.cartesianCoordsToCanvas(curve.middleX, curve.middleY);
           convertedCurve.right = this.convert.cartesianCoordsToCanvas(curve.rightX, curve.rightY);
-
-          const root1 = Math.round(curve.leftX*100)/100;
-          const root2 = Math.round(curve.rightX*100)/100;
-
           convertedCurve.root1 = curve.root1;
           convertedCurve.root2 = curve.root2;
 
@@ -70,7 +60,7 @@ class Calculate {
   get Axis() {
     //Gets coords for the x and y axis lines
     //These will extend to the edges of the canvas and so must ignore any scaling factors (the zoom factor)
-    const edgeValues = this.getedgeValues;
+    //const edgeValues = this.getedgeValues;
 
     const y0 = this.convert.yCoordToPercent(0); //Line where y=0
     const y0Pix = this.convert.percentHeightToPix(y0, this.ctx);
@@ -108,58 +98,6 @@ class Calculate {
 
     return calculated
   }
-  orderPoints() {
-    let pointList = [];
-    let solutionIndex = 0;
-    let critIndex = 0;
-    let critYValues = [];
-    //let
-    for (let crit of this.critSolutions) {
-      critYValues.push(this.evaluate(crit))
-    }
-    //console.log("Y val");
-    //console.log(critYValues);
-    console.log("Counting", this.rootCount, this.critCount);
-    if (this.rootCount > 0 && this.critCount > 0) {
-      let index = 0;
-      let revSols = this.solutions.slice();//copy
-      revSols.reverse();
-      let revCrit = this.critSolutions.slice();
-      revCrit.reverse();
-      let revCritY = critYValues.slice();
-      revCritY.reverse();
-      let nextRoot = revSols.pop();
-      let nextCrit = revCrit.pop();
-      let nextYCrit = revCritY.pop();
-      //Basically a variation of merge sort, assuming the sols and crit sols have
-      //already been sorted
-      while (pointList.length < this.rootCount + this.critCount) {
-        if (nextRoot != undefined && nextCrit != undefined) {
-          if (nextRoot < nextCrit) {
-            pointList.push({"Root": nextRoot});
-            nextRoot = revSols.pop()
-          } else {
-            pointList.push({"Crit":[nextCrit, nextYCrit]});
-            nextCrit = revCrit.pop();
-            nextYCrit = revCritY.pop();
-          }
-        } else if (nextRoot != undefined) {
-          pointList.push({"Root": nextRoot});
-          nextRoot = revSols.pop()
-        } else if (nextCrit != undefined) {
-          pointList.push({"Crit":[nextCrit, nextYCrit]});
-          nextCrit = revCrit.pop();
-          nextYCrit = revCritY.pop();
-        } else { //Should never happen
-          console.log("Oof");
-        }
-      }
-    } else {
-      console.log("yikes");
-    }
-
-    return pointList
-  }
   evaluate(x_value) {
     let factors = this.func.factors;
     let total = 0;
@@ -189,7 +127,7 @@ class Calculate {
       //look at three points at a time
       console.log("points");
       console.log(orderedPoints);
-      let consumedPoints = false;
+      //let consumedPoints = false;
       while (index < orderedPoints.length - 2) {
         let [p1, p2, p3] = orderedPoints.slice(index, index+3);
         //console.log("triple points");
@@ -198,12 +136,18 @@ class Calculate {
         //console.log(p3);
         if (p1.Root != undefined && p2.Crit != undefined && p3.Root != undefined) {
           curveList.push(this.quadraticCurve(p1,p2,p3))
+          index += 2
+        } else if (p1.Root != undefined && p2.Crit!= undefined && p3.Crit != undefined) {
+          curveList.push(this.leftRoot(p1,p2,p3))
+          index += 2
+        } else {
+          index += 2
         }
-        index += 2
+
       }
       index += 1 //To show done drawing last point from the group of three
       let amountRemaining = orderedPoints.length - index + 1;//need to re-add last drawn point
-      if (amountRemaining > 0) {
+      if (amountRemaining > 1) {
         console.log("leftovers");
         console.log(index,orderedPoints.length, amountRemaining);
         if (amountRemaining == 1) {
@@ -232,7 +176,7 @@ class Calculate {
     }
     return curveList
   }
-  linearCurve(point) {
+  linearCurve(x_intercept) {
     let x_plus_1 = x_intercept + 1;
     let f_x_plus_1 = this.evaluate(x_plus_1);
 
@@ -241,24 +185,39 @@ class Calculate {
       xIntercept: x_intercept,
       xPlus1: x_plus_1,
       fXplus1: f_x_plus_1,
-      root1: point
     }
+    return functionPart
+  }
+  leftRoot(root, crit1, crit2) {
+    const functionPart = {
+      type: 'Cubic',
+      leftX: root.Root,
+      leftY: 0,
+      middleX: crit1.Crit.x_val,
+      middleY: crit1.Crit.y_val,
+      rightX: crit2.Crit.x_val,
+      rightY: crit2.Crit.y_val,
+      root1: Math.round(root.Root * 100) / 100,
+      root2: null,
+    }
+    console.log("leftRoot");
+    console.log(functionPart);
     return functionPart
   }
   inflectionCurve(crit, root) {
     //Have to create third point that lies opposite the root relative to the inflection point
     let leftX, rightX, leftY, rightY;
-    const leftSide = root.Root < crit.Crit[0]; //Root is on left side of crit
+    const leftSide = root.Root < crit.Crit.x_val; //Root is on left side of crit
     //console.log("left",leftSide);
 
     if (leftSide) {
       leftX = root.Root;
       leftY = 0;
-      rightX = 2 * crit.Crit[0] - root.Root;
-      rightY = 2 * crit.Crit[1]
+      rightX = 2 * crit.Crit.x_val - root.Root;
+      rightY = 2 * crit.Crit.y_val
     } else {
-      leftX = 2 * crit.Crit[0] - root.Root;
-      leftY = 2 * crit.Crit[1]
+      leftX = 2 * crit.Crit.x_val - root.Root;
+      leftY = 2 * crit.Crit.y_val
       rightX = root.Root;
       rightY = 0
 
@@ -267,8 +226,8 @@ class Calculate {
       type: 'Cubic',
       leftX,
       leftY,
-      middleX: crit.Crit[0],
-      middleY: crit.Crit[1],
+      middleX: crit.Crit.x_val,
+      middleY: crit.Crit.y_val,
       rightX,
       rightY,
       root1: (leftSide) ? root.Root : null,
@@ -284,12 +243,12 @@ class Calculate {
       type: 'Cubic',
       leftX: root1.Root,
       leftY: 0,
-      middleX: crit.Crit[0],
-      middleY: crit.Crit[1],
+      middleX: crit.Crit.x_val,
+      middleY: crit.Crit.y_val,
       rightX: root2.Root,
       rightY: 0,
-      root1: Math.round(root1 * 100) / 100,
-      root2: Math.round(root2 * 100) / 100,
+      root1: Math.round(root1.Root * 100) / 100,
+      root2: Math.round(root2.Root * 100) / 100,
     }
     return functionPart
   }

@@ -14,11 +14,11 @@ export default {
     // Array of roots plus array of critical points
     solutions: {
       type: Array,
-      default: []
+      //default: []
     },
-    critSolutions: {
+    mergedPoints: {
       type: Array,
-      default: []
+      //default: []
     },
     func: {
       type: Object,
@@ -113,12 +113,15 @@ export default {
       if (edgeValues.min_y == edgeValues.max_y) {
         this.height = Math.abs(edgeValues.min_y)
       } else {
-        this.height = Math.max(edgeValues.max_y - edgeValues.min_y,0);
+        //if (this.solutions != []) {
+          //this.height = Math.max(edgeValues.max_y, edgeValues.min_y);
+        //} else {
+          this.height = Math.max(edgeValues.max_y - edgeValues.min_y,0);
       }
       //this.height *= 2;
       //this.width *= 2;
       //this.yPercentOffset = 0;//min_y / this.height;
-      //console.log(this.width,this.height,this.xPercentOffset,this.yPercentOffset);
+      //console.log("W*H",this.width,this.height);
     },
     distance: function(x1,y1,x2,y2) {
       return Math.sqrt((x1-y1)**2 + (x2-y2)**2)
@@ -127,7 +130,7 @@ export default {
       //console.log("New function");
       let ctx = this.provider.context;
       let convert = new Convert(this.width, this.height, ctx, this.xPercentOffset, this.scale);
-      let calculate = new Calculate(convert, this.solutions, this.critSolutions, this.func, ctx);
+      let calculate = new Calculate(convert, this.solutions, this.mergedPoints, this.func, ctx);
       this.draw = new Draw(calculate, ctx, this.scale);
     },
     evaluate: function(x_value) {
@@ -157,55 +160,74 @@ export default {
         this.oldFunction.sols = this.solutions;
         modified = true
       }
-      return modified
-      if (modified) {
+      /*if (modified) {
         console.log("function");
         //this.newDrawObject(); //called already
-      }
+      }*/
+      return modified
     },
-
+    comparePoints: function(a, b) {
+      let a_y, b_y;
+      if(a.Root != undefined) {
+        a_y = 0
+      } else {
+        a_y = a.Crit.y_val
+      }
+      if (b.Root != undefined) {
+        b_y = 0
+      } else {
+        b_y = b.Crit.y_val
+      }
+      return a_y > b_y;
+    }
   },
   computed: {
     getedgeValues () {
       let min_x, max_x, min_y, max_y;
-      if (this.solutions.length == 1 && this.critSolutions.length == 1) {
+      let mLen = this.mergedPoints.length - 1;
+      let leftCrit = this.mergedPoints[0].Crit != undefined;
+      let rightCrit = this.mergedPoints[mLen].Crit != undefined;
+      if (leftCrit || rightCrit) {
         //Usually a cubic/ other graph w inflection point
+        console.log("Hehe");
+        let index = (leftCrit) ? 0 : mLen;
         const solX = this.solutions[0];
-        const critX = this.critSolutions[0];
-        const critY = this.evaluate(critX);
+        const critX = this.mergedPoints[index].Crit.x_val;
+        const critY = this.mergedPoints[index].Crit.y_val;
         const mirrorX = 2 * critX - solX;
         const mirrorY = 2 * critY
-        
+
         min_x = Math.min(mirrorX, solX, critX);
         max_x = Math.max(mirrorX, solX, critX);
         min_y = Math.min(mirrorY, 0, critY);
         max_y = Math.max(mirrorY, 0, critY);
 
-      } else if (this.solutions.length != 0 || this.critSolutions.length != 0) {
-        let min_s_x = Math.min(...this.solutions);//Is zero if has no elements
-        let max_s_x = Math.max(...this.solutions);
-        let min_c_x = Math.min(...this.critSolutions);
-        let max_c_x = Math.min(...this.critSolutions);
-
-        if (min_s_x < min_c_x) {
-          min_x = min_s_x
+      } else if (this.mergedPoints.length != 0) {
+        if (this.mergedPoints[0].Root != undefined) {
+          min_x = this.mergedPoints[0].Root
         } else {
-          min_x = max_c_x
+          min_x = this.mergedPoints[0].Crit.x_val
         }
-
-        if (max_s_x > max_c_x) {
-          max_x = max_s_x
+        let mLen = this.mergedPoints.length - 1;
+        if (this.mergedPoints[mLen].Root != undefined) {
+          max_x = this.mergedPoints[mLen].Root
         } else {
-          max_x = max_c_x
+          max_x = this.mergedPoints[mLen].Crit.x_val
         }
 
-        let critYValues = [];
-        for (let crit of this.critSolutions) {
-          critYValues.push(this.evaluate(crit))
-        }
+        let mergedCopy = this.mergedPoints.slice();
+        mergedCopy.sort(this.comparePoints);
 
-        min_y = Math.min(...critYValues);
-        max_y = Math.min(...critYValues);
+        if (mergedCopy[0].Root != undefined) {
+          min_y = 0
+        } else {
+          min_y = mergedCopy[0].Crit.y_val
+        }
+        if (mergedCopy[mLen].Root != undefined) {
+          max_y = 0
+        } else {
+          max_y = mergedCopy[mLen].Crit.y_val
+        }
       } else {
         [min_x, max_x, min_y, max_y] = [-1, 1, -1, 1];
       }

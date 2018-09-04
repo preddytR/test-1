@@ -1,8 +1,6 @@
 //Canvas methods to draw different functions
 //Relies on data in FunctionGraph.vue
 
-import {Calculate} from './calculateCoords'
-
 class Draw {
   constructor(calculate, ctx, scale) {
     this.calculated = calculate;
@@ -30,11 +28,10 @@ class Draw {
     const end = curve.right;
     const above1 = (crit[1] > start[1]) ? 1: -1;//May need to change how y0 on canvas defined
     const above2 = (crit[1] > end[1]) ? 1: -1;
-    //console.log("curve");
-    //console.log(curve);
+    console.log("curve");
+    console.log(curve);
 
     const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth);
-    const cpY = crit[1] + adjust;
     const cp1 = [(crit[0] + start[0]) / 2 , crit[1] + adjust * above1];
     const cp2 = [(end[0] + crit[0]) / 2 , crit[1] + adjust * above2];
     //console.log(this.ctx.canvas.height);
