@@ -1,8 +1,5 @@
 // Helper functions to convert a percentage of canvas area to pixels.
-//const percentWidthToPix = (percent, ctx) => Math.floor((ctx.canvas.width / 100) * percent)
-//const percentHeightToPix = (percent, ctx) => Math.floor((ctx.canvas.height / 100) * percent)
 
-//const percentCoordToPix = (percentX, percentY, ctx) => [percentWidthToPix(percentX,ctx), percentHeightToPix(percentY, ctx)]
 class Convert {
   constructor(width, height, ctx, xPercentOffset, scale) {
     this.width = width;

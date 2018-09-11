@@ -40,7 +40,7 @@
     <my-canvas style="width:100%; height:100%;margin:auto;">
       <function-graph
       :solutions="solutions"
-      :mergedPoints="mergedPoints"
+      :tripled="tripled"
       :func="func"
       >
       </function-graph>
@@ -69,13 +69,16 @@ export default {
       stringFunction: "x^3-2x+24",
       func: {'factors':[],'length':0},
       funcString: "",
+      localServer: true, //Whether to use to local api, for testing purposes only
+      //apiLocation: "http://localhost:3543/api",//"https://random-project-testing.com/api",
       validFunction: true,
       result: "",
       error: "",
       terms:[],
       solutions: [],
       funcId: -1,
-      mergedPoints: [],
+      tripled: [],
+      tripled2: [],
       haveAllInfo: false,
       termStrings: [],
       msg: 'PolySolve: Simple algorithm to find roots for a polynomial function',
@@ -94,6 +97,11 @@ export default {
       this.chartValues[selectedVal].val = Math.min(Math.max(this.chartValues[selectedVal].val + dir * 0.5, 0), 100);
     }, 16);
   },*/
+  computed: {
+    apiLocation () {
+      return (this.localServer) ? "http://localhost:3543/api" : "https://random-project-testing.com/api"
+    }
+  },
   methods: {
     checkFunction: function(){
       let generate;
@@ -101,6 +109,7 @@ export default {
         generate = new TokensToAST(this.stringFunction);
       } catch (e) {
         this.error = 'TokensToAST error ' + e
+        console.log(this.error);
       }
       this.haveAllInfo = false;
       let func = generate.factor();
@@ -108,7 +117,7 @@ export default {
       this.funcString = func.toString();
       this.terms = func.factors;
       this.formatTokens();
-      this.$http.post('https://random-project-testing.com/api/function',func)
+      this.$http.post(this.apiLocation + '/function',func)
       .then(function(response){
         let results = response.body.solutions;
         let time = response.body.time;
@@ -118,12 +127,12 @@ export default {
             "id": this.funcId
           }
         };
-        this.$http.get('https://random-project-testing.com/api/critical',{params: {'id': this.funcId}})
+        this.$http.get(this.apiLocation + '/critical',{params: {'id': this.funcId}})
         .then(function(response2){
-          this.mergedPoints = response2.body.merged;
+          this.tripled = response2.body.tripled;
           this.solutions = results; //called here so both set at same time
           console.log("db");
-          console.log(this.mergedPoints);
+          console.log(this.tripled);
           console.log(results);
           //console.log(response2);
         }, function(error){

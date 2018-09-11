@@ -1,34 +1,25 @@
 
 class Calculate {
-  constructor(convert, solutions, mergedPoints, func, ctx) {
+  constructor(convert, solutions, tripled, func, ctx) {
     this.convert = convert;
     this.solutions = solutions;
-    this.mergedPoints = mergedPoints;
-    if (solutions != undefined) {
+    /*if (solutions != undefined) {
       this.rootCount = this.solutions.length
     } else {
       this.rootCount = -1
     }
     if (mergedPoints != undefined) {
-      this.critCount = this.mergedPoints.length - this.solutions.length;
+      this.critCount = mergedPoints.length - this.solutions.length;
     } else {
       this.critCount = -1
-    }
+    }*/
 
     this.func = func;
     this.ctx = ctx;
     this.scale = this.convert.scale;
     this.xPercentOffset = this.convert.xPercentOffset;
 
-    //let ordered = this.orderPoints();
-    /*console.log("order");
-    console.log(this.solutions);
-    console.log(this.critSolutions);
-    console.log(ordered);*/
-    this.bezierList = this.convertToBeziers(mergedPoints);
-    //console.log("beziers");
-    //console.log(this.bezierList);
-    //let this.convert = new Convert(this.width, this.height, this.provider.context, this.xPercentOffset);
+    this.bezierList = this.convertToBeziers(tripled);
   }
   get Curves() {
     if (this.bezierList.length > 0) {
@@ -37,13 +28,18 @@ class Calculate {
         let convertedCurve = {};
         if (curve.type == 'linear') {
           console.log('linear X');
-        } else if (curve.type == 'Cubic') {
-          convertedCurve.type = 'Cubic';
+        } else if (curve.type == 'Cubic' || curve.type == 'Inflection') {
+          convertedCurve.type = curve.type;
           convertedCurve.left = this.convert.cartesianCoordsToCanvas(curve.leftX,curve.leftY);
           convertedCurve.middle = this.convert.cartesianCoordsToCanvas(curve.middleX, curve.middleY);
           convertedCurve.right = this.convert.cartesianCoordsToCanvas(curve.rightX, curve.rightY);
           convertedCurve.root1 = curve.root1;
           convertedCurve.root2 = curve.root2;
+          convertedCurve.labels = {
+            left: [curve.leftX, curve.leftY],
+            middle: [curve.middleX, curve.middleY],
+            right: [curve.rightX, curve.rightY],
+          }
 
           convertedCurveList.push(convertedCurve)
         } else {
@@ -57,6 +53,21 @@ class Calculate {
       return null
     }
   }
+  get RootLabels() {
+    let labels = [];
+    const decimalPoints = 2;
+    for (let sol of this.solutions) {
+      let rounded = Math.round(sol*(10**decimalPoints)) / (10**decimalPoints);
+      let [x, y] = this.convert.cartesianCoordsToCanvas(sol/*+(sol/14)*/, 0);
+      const label = {
+        rounded,
+        x,
+        y
+      };
+      labels.push(label)
+    }
+    return labels
+  }
   get Axis() {
     //Gets coords for the x and y axis lines
     //These will extend to the edges of the canvas and so must ignore any scaling factors (the zoom factor)
@@ -65,7 +76,7 @@ class Calculate {
     const y0 = this.convert.yCoordToPercent(0); //Line where y=0
     const y0Pix = this.convert.percentHeightToPix(y0, this.ctx);
 
-    const x0 = -this.xPercentOffset + (this.xPercentOffset + 50)*(1 - this.scale);//line where x=0
+    const x0 = -this.xPercentOffset + (this.xPercentOffset + 50) * (1 - this.scale);//line where x=0
     //console.log("x0",x0);
     const x0Pix = this.convert.percentWidthToPix(x0, this.ctx);
 
@@ -106,10 +117,10 @@ class Calculate {
     }
     return total
   }
-  convertToBeziers(orderedPoints) {
+  convertToBeziers(tripled) {
     //converts an ordered list of points to a list of peicewise bezier curves or lines fitting those points
     let curveList = []; //list of curve objects
-    if (this.rootCount == 0 && this.critCount ==  0){
+    /*if (this.rootCount == 0 && this.critCount ==  0){
       //console.log("Do nothing");
     } else if (this.rootCount == 0 && this.critCount > 0) {
       //No real solutions but need to draw
@@ -137,7 +148,7 @@ class Calculate {
         if (p1.Root != undefined && p2.Crit != undefined && p3.Root != undefined) {
           curveList.push(this.quadraticCurve(p1,p2,p3))
           index += 2
-        } else if (p1.Root != undefined && p2.Crit!= undefined && p3.Crit != undefined) {
+        } else if (p1.Root != undefined && p2.Crit!= undefined && (p2.Crit.nature == 'max' || p2.Crit.nature == 'min') &&p3.Crit != undefined) {
           curveList.push(this.leftRoot(p1,p2,p3))
           index += 2
         } else {
@@ -147,11 +158,14 @@ class Calculate {
       }
       index += 1 //To show done drawing last point from the group of three
       let amountRemaining = orderedPoints.length - index + 1;//need to re-add last drawn point
-      if (amountRemaining > 1) {
+      if (amountRemaining > 0) {
         console.log("leftovers");
         console.log(index,orderedPoints.length, amountRemaining);
         if (amountRemaining == 1) {
           console.log('one remaining');
+          let firstPoint = orderedPoints[index-2];
+          let secondPoint = orderedPoints[index-1];
+          console.log(firstPoint,secondPoint);
         } else if (amountRemaining == 2) {
           let crit, root;
           let firstPoint = orderedPoints[index-1];
@@ -173,6 +187,26 @@ class Calculate {
           }
         }
       }
+    }*/
+    for (let triple of tripled) {
+      let type;
+      if (triple.left_y < triple.y && triple.y < triple.right_y || triple.left_y > triple.y && triple.y > triple.right_y) {
+        type = 'Inflection'
+      } else {
+        type = 'Cubic'
+      }
+      const functionPart = {
+        type,
+        leftX: triple.left_x,
+        rightX: triple.right_x,
+        leftY: triple.left_y,
+        rightY: triple.right_y,
+        middleX: triple.x,
+        middleY: triple.y,
+        root1: null,
+        root2: null,
+      }
+      curveList.push(functionPart)
     }
     return curveList
   }
@@ -206,6 +240,7 @@ class Calculate {
   }
   inflectionCurve(crit, root) {
     //Have to create third point that lies opposite the root relative to the inflection point
+    console.log("inflection");
     let leftX, rightX, leftY, rightY;
     const leftSide = root.Root < crit.Crit.x_val; //Root is on left side of crit
     //console.log("left",leftSide);
@@ -223,7 +258,7 @@ class Calculate {
 
     }
     const functionPart = {
-      type: 'Cubic',
+      type: 'Inflection',
       leftX,
       leftY,
       middleX: crit.Crit.x_val,

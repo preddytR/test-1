@@ -16,7 +16,7 @@ export default {
       type: Array,
       //default: []
     },
-    mergedPoints: {
+    tripled: {
       type: Array,
       //default: []
     },
@@ -46,7 +46,7 @@ export default {
       height: 2,
       xPercentOffset: 0,
       yPercentOffset: 0,
-      scale: .75, //Both x and y direction - zoom factor
+      scale: .5, //Both x and y direction - zoom factor
       windowScale: 1, //How much of the webpage the canvas element should take
       draw: null,
       calculated: null,
@@ -91,10 +91,16 @@ export default {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       this.draw.Graph();
+      //this.draw.Labels(true);//Add Cross
       this.draw.Axis();
       this.draw.Border();
     },
     establishScale: function() {
+      //Sets the height and width - in cartesian coordinates
+      //Also sets the x-offset as a percentage
+      //Otherwise cartesion x-values less than 0
+      //will be drawn off to the side of the intended bounds
+
       const edgeValues = this.getedgeValues;
 
       if (edgeValues.max_x == edgeValues.min_x) {
@@ -105,7 +111,7 @@ export default {
       //console.log("edge");
       //console.log(edgeValues);
       if (edgeValues.min_x == edgeValues.max_x) { //
-        this.xPercentOffset = edgeValues.min_x / this.width * 100+ 50;
+        this.xPercentOffset = edgeValues.min_x / this.width * 100 + 50;
       } else {
         this.xPercentOffset = edgeValues.min_x / this.width * 100;
       }
@@ -127,19 +133,14 @@ export default {
       return Math.sqrt((x1-y1)**2 + (x2-y2)**2)
     },
     newDrawObject: function() {
+      //Recreates the this.draw object
+      //Called when one of this.vars changes
+
       //console.log("New function");
       let ctx = this.provider.context;
       let convert = new Convert(this.width, this.height, ctx, this.xPercentOffset, this.scale);
-      let calculate = new Calculate(convert, this.solutions, this.mergedPoints, this.func, ctx);
+      let calculate = new Calculate(convert, this.solutions, this.tripled, this.func, ctx);
       this.draw = new Draw(calculate, ctx, this.scale);
-    },
-    evaluate: function(x_value) {
-      let factors = this.func.factors;
-      let total = 0;
-      for (let factor of factors) {
-        total += factor.coeff * (x_value ** factor.power)
-      }
-      return total
     },
     checkViewModified: function() {
       let canvas = this.provider.context.canvas;
@@ -167,6 +168,7 @@ export default {
       return modified
     },
     comparePoints: function(a, b) {
+      //Used to compare the y-values of different points
       let a_y, b_y;
       if(a.Root != undefined) {
         a_y = 0
@@ -179,63 +181,46 @@ export default {
         b_y = b.Crit.y_val
       }
       return a_y > b_y;
+    },
+    findMinMaxY: function() {
+      let min_y = 0;
+      let max_y = 0;
+      for (let triple of this.tripled) {
+        min_y = Math.min(triple.left_y, triple.y, triple.right_y, min_y);
+        max_y = Math.max(triple.left_y, triple.y, triple.right_y, max_y)
+      }
+      return {min_y, max_y}
     }
   },
   computed: {
     getedgeValues () {
+      //Works out the minimum and maximum x and y values that will be drawn
+      //Some of the points that need to be drawn do not exist as solutions
+      //or critical points
       let min_x, max_x, min_y, max_y;
-      let mLen = this.mergedPoints.length - 1;
-      let leftCrit = this.mergedPoints[0].Crit != undefined;
-      let rightCrit = this.mergedPoints[mLen].Crit != undefined;
-      if (leftCrit || rightCrit) {
-        //Usually a cubic/ other graph w inflection point
-        console.log("Hehe");
-        let index = (leftCrit) ? 0 : mLen;
-        const solX = this.solutions[0];
-        const critX = this.mergedPoints[index].Crit.x_val;
-        const critY = this.mergedPoints[index].Crit.y_val;
-        const mirrorX = 2 * critX - solX;
-        const mirrorY = 2 * critY
-
-        min_x = Math.min(mirrorX, solX, critX);
-        max_x = Math.max(mirrorX, solX, critX);
-        min_y = Math.min(mirrorY, 0, critY);
-        max_y = Math.max(mirrorY, 0, critY);
-
-      } else if (this.mergedPoints.length != 0) {
-        if (this.mergedPoints[0].Root != undefined) {
-          min_x = this.mergedPoints[0].Root
-        } else {
-          min_x = this.mergedPoints[0].Crit.x_val
-        }
-        let mLen = this.mergedPoints.length - 1;
-        if (this.mergedPoints[mLen].Root != undefined) {
-          max_x = this.mergedPoints[mLen].Root
-        } else {
-          max_x = this.mergedPoints[mLen].Crit.x_val
-        }
-
-        let mergedCopy = this.mergedPoints.slice();
-        mergedCopy.sort(this.comparePoints);
-
-        if (mergedCopy[0].Root != undefined) {
-          min_y = 0
-        } else {
-          min_y = mergedCopy[0].Crit.y_val
-        }
-        if (mergedCopy[mLen].Root != undefined) {
-          max_y = 0
-        } else {
-          max_y = mergedCopy[mLen].Crit.y_val
-        }
+      let tLen = this.tripled.length;
+      if (this.tripled.length == 1) {
+        let middle_x = this.tripled[0].x;
+        max_x = this.tripled[0].right_x;
+        min_x = this.tripled[0].left_x;
+        let minMaxY = this.findMinMaxY();
+        min_y = minMaxY.min_y;
+        max_y = minMaxY.max_y;
+      } else if (this.tripled.length != 0) {
+        max_x = this.tripled[tLen-1].right_x;
+        min_x = this.tripled[0].left_x;
+        let minMaxY = this.findMinMaxY();
+        min_y = minMaxY.min_y;
+        max_y = minMaxY.max_y;
       } else {
         [min_x, max_x, min_y, max_y] = [-1, 1, -1, 1];
+        console.log("edgeBase");
       }
       const edgeValues = {
-        "max_x": max_x,
-        "min_x": min_x,
-        "max_y": max_y,
-        "min_y": min_y,
+        max_x,
+        min_x,
+        max_y,
+        min_y,
       };
       console.log("edge");
       console.log(edgeValues);
@@ -246,6 +231,7 @@ export default {
   render () {
     // Since the parent canvas has to mount first, it's *possible* that the context may not be
     // injected by the time this render function runs the first time.
+    console.log("detected change");
     this.redraw();
   }
 }
