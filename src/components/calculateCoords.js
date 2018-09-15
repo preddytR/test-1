@@ -1,68 +1,35 @@
 
 class Calculate {
-  constructor(convert, solutions, tripled, func, ctx) {
+  constructor(convert, solutions, keypoints, func, ctx) {
     this.convert = convert;
     this.solutions = solutions;
-    /*if (solutions != undefined) {
-      this.rootCount = this.solutions.length
-    } else {
-      this.rootCount = -1
-    }
-    if (mergedPoints != undefined) {
-      this.critCount = mergedPoints.length - this.solutions.length;
-    } else {
-      this.critCount = -1
-    }*/
+    this.decimalPoints = 2;
 
     this.func = func;
     this.ctx = ctx;
     this.scale = this.convert.scale;
     this.xPercentOffset = this.convert.xPercentOffset;
 
-    this.bezierList = this.convertToBeziers(tripled);
+    this.keypoints = keypoints;
+
+    //this.bezierList = this.convertToBeziers(keypoints);
   }
   get Curves() {
-    if (this.bezierList.length > 0) {
-      let convertedCurveList = [];
-      for (let curve of this.bezierList) {
-        let convertedCurve = {};
-        if (curve.type == 'linear') {
-          console.log('linear X');
-        } else if (curve.type == 'Cubic' || curve.type == 'Inflection') {
-          convertedCurve.type = curve.type;
-          convertedCurve.left = this.convert.cartesianCoordsToCanvas(curve.leftX,curve.leftY);
-          convertedCurve.middle = this.convert.cartesianCoordsToCanvas(curve.middleX, curve.middleY);
-          convertedCurve.right = this.convert.cartesianCoordsToCanvas(curve.rightX, curve.rightY);
-          convertedCurve.root1 = curve.root1;
-          convertedCurve.root2 = curve.root2;
-          convertedCurve.labels = {
-            left: [curve.leftX, curve.leftY],
-            middle: [curve.middleX, curve.middleY],
-            right: [curve.rightX, curve.rightY],
-          }
-
-          convertedCurveList.push(convertedCurve)
-        } else {
-          console.log('Oooof');
-        }
-      }
-      const calculated = convertedCurveList;
-
-      return calculated
+    if (this.keypoints.length > 0) {
+      return this.convertToBeziers(this.keypoints);
     } else {
       return null
     }
   }
   get RootLabels() {
     let labels = [];
-    const decimalPoints = 2;
     for (let sol of this.solutions) {
-      let rounded = Math.round(sol*(10**decimalPoints)) / (10**decimalPoints);
-      let [x, y] = this.convert.cartesianCoordsToCanvas(sol/*+(sol/14)*/, 0);
+      let rounded = this.round(sol);
+      let point = this.convert.cartesianCoordsToCanvas({x:sol,y: 0});
       const label = {
         rounded,
-        x,
-        y
+        x: point.x,
+        y: point.y
       };
       labels.push(label)
     }
@@ -86,23 +53,45 @@ class Calculate {
     let yStartCoord = [x0Pix, 0];
     let yEndCoord = [x0Pix, this.ctx.canvas.height];
 
+    //Calculating the numbers to use for the axis
+    const outerWidth = this.ctx.canvas.width * (1 - this.scale) / 2;
+    const outerHeight = this.ctx.canvas.height * (1 - this.scale) / 2;
+
+    const xMin = this.round(this.convert.percentToXCoord(0));
+    const xMax = this.round(this.convert.percentToXCoord(100));
+    const yMin = this.round(this.convert.percentToYCoord(0));
+    const yMax = this.round(this.convert.percentToYCoord(100));
+
+    const xLeftLabel = {x: outerWidth, y: y0Pix, rounded: xMin};
+    const xRightLabel = {x: this.ctx.canvas.width - outerWidth, y: y0Pix, rounded: xMax};
+    const yTopLabel = {x: x0Pix, y: outerHeight, rounded: yMax};
+    const yBotLabel = {x: x0Pix, y: this.ctx.canvas.height - outerHeight, rounded: yMin};
+    const labels = [
+      xLeftLabel,
+      xRightLabel,
+      yTopLabel,
+      yBotLabel,
+    ];
+    console.log("labels");
+    console.log(labels);
     const calculated = {
       xStart: xStartCoord,
       xEnd: xEndCoord,
       yStart: yStartCoord,
       yEnd: yEndCoord,
+      labels,
     }
     return calculated
   }
   get Border() {
     //Should draw a border that contains the entire graph, from first to last root
-    const leftBorderTop = this.convert.percentCoordToPix(0,0); //Graph should remain centered
+    const leftBorderTop = this.convert.percentCoordToPix({x:0,y:0}); //Graph should remain centered
     const width = this.ctx.canvas.width * this.scale;
     const height = this.ctx.canvas.height * this.scale;
 
     const calculated = {
-      x: leftBorderTop[0],
-      y: leftBorderTop[1],
+      x: leftBorderTop.x,
+      y: leftBorderTop.y,
       w: width,
       h: height,
     }
@@ -117,94 +106,35 @@ class Calculate {
     }
     return total
   }
-  convertToBeziers(tripled) {
+  convertToBeziers(keypoints) {
     //converts an ordered list of points to a list of peicewise bezier curves or lines fitting those points
     let curveList = []; //list of curve objects
-    /*if (this.rootCount == 0 && this.critCount ==  0){
-      //console.log("Do nothing");
-    } else if (this.rootCount == 0 && this.critCount > 0) {
-      //No real solutions but need to draw
-    } else if (this.rootCount == 1 && this.critCount == 0) {
-      //A linear function
-      let x_intercept = orderedPoints[0].Root//this.solutions[0];
-      console.log("x-int");
-      console.log(x_intercept);
-      curveList.push(this.linearCurve(x_intercept));
-
-    } else if (this.rootCount > 0 && this.critCount > 0) {
-      //will have an orderedPoints list to use
-      //console.log("extra");
-      let index = 0;
-      //look at three points at a time
-      console.log("points");
-      console.log(orderedPoints);
-      //let consumedPoints = false;
-      while (index < orderedPoints.length - 2) {
-        let [p1, p2, p3] = orderedPoints.slice(index, index+3);
-        //console.log("triple points");
-        //console.log(p1);
-        //console.log(p2);
-        //console.log(p3);
-        if (p1.Root != undefined && p2.Crit != undefined && p3.Root != undefined) {
-          curveList.push(this.quadraticCurve(p1,p2,p3))
-          index += 2
-        } else if (p1.Root != undefined && p2.Crit!= undefined && (p2.Crit.nature == 'max' || p2.Crit.nature == 'min') &&p3.Crit != undefined) {
-          curveList.push(this.leftRoot(p1,p2,p3))
-          index += 2
-        } else {
-          index += 2
-        }
-
-      }
-      index += 1 //To show done drawing last point from the group of three
-      let amountRemaining = orderedPoints.length - index + 1;//need to re-add last drawn point
-      if (amountRemaining > 0) {
-        console.log("leftovers");
-        console.log(index,orderedPoints.length, amountRemaining);
-        if (amountRemaining == 1) {
-          console.log('one remaining');
-          let firstPoint = orderedPoints[index-2];
-          let secondPoint = orderedPoints[index-1];
-          console.log(firstPoint,secondPoint);
-        } else if (amountRemaining == 2) {
-          let crit, root;
-          let firstPoint = orderedPoints[index-1];
-          let secondPoint = orderedPoints[index];
-          //curveList.push(this.inflectionCurve())
-          if (firstPoint.Crit != undefined && secondPoint.Root != undefined) {
-            crit  = firstPoint;
-            root = secondPoint;
-          } else if (firstPoint.Root != undefined && secondPoint.Crit != undefined) {
-            crit = secondPoint;
-            root = firstPoint
-          } else{
-            throw "Expecting a root to match crit"
-          }
-          if (index - 1 == 0) { //stupid way to check these are the only two points on the curve
-            curveList.push(this.inflectionCurve(crit, root))
-          } else {
-            throw "Need to work with edge cubic cases"
-          }
-        }
-      }
-    }*/
-    for (let triple of tripled) {
+    for (let keypoint of keypoints) {
       let type;
-      if (triple.left_y < triple.y && triple.y < triple.right_y || triple.left_y > triple.y && triple.y > triple.right_y) {
+      if (keypoint.left.y < keypoint.crit.y && keypoint.crit.y < keypoint.right.y || keypoint.left.y > keypoint.crit.y && keypoint.crit.y > keypoint.right.y) {
         type = 'Inflection'
       } else {
         type = 'Cubic'
       }
       const functionPart = {
         type,
-        leftX: triple.left_x,
-        rightX: triple.right_x,
-        leftY: triple.left_y,
-        rightY: triple.right_y,
-        middleX: triple.x,
-        middleY: triple.y,
+        left : this.convert.cartesianCoordsToCanvas(keypoint.left),
+        CP1 : this.convert.cartesianCoordsToCanvas(keypoint.CP1),
+        CP2: this.convert.cartesianCoordsToCanvas(keypoint.CP2),
+        CP1a : this.convert.cartesianCoordsToCanvas(keypoint.CP1a),
+        CP2a : this.convert.cartesianCoordsToCanvas(keypoint.CP2a),
+        CP1b : this.convert.cartesianCoordsToCanvas(keypoint.CP1b),
+        CP2b : this.convert.cartesianCoordsToCanvas(keypoint.CP2b),
+        CP1AVERAGE : this.convert.cartesianCoordsToCanvas(keypoint.CP1AVERAGE),
+        CP2AVERAGE : this.convert.cartesianCoordsToCanvas(keypoint.CP2AVERAGE),
+        right: this.convert.cartesianCoordsToCanvas(keypoint.right),
         root1: null,
         root2: null,
+        labels: {
+          left: keypoint.left,
+          middle: keypoint.crit,
+          right: keypoint.right
+        }
       }
       curveList.push(functionPart)
     }
@@ -286,6 +216,9 @@ class Calculate {
       root2: Math.round(root2.Root * 100) / 100,
     }
     return functionPart
+  }
+  round(number) {
+    return Math.round(number * (10 ** this.decimalPoints) / (10 ** this.decimalPoints))
   }
 }
 

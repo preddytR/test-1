@@ -3,6 +3,21 @@
     <div id="hideToggle" @mouseover="dimmed = true" @mouseleave="dimmed = false">
       <i class="fa fa-eye" @click="visible = !visible"></i>
     </div>
+    <div id="serverSelector" v-if="serverSwitch">
+      <button name="server" @click="localServer = !localServer">Switch API service</button>
+      <p>Currently: {{apiLocation}}</p>
+    </div>
+    <div id="controlPoints">
+      <div v-for="keypoint in keypoints">
+        <p> CP1 </p>
+        <p> x: {{keypoint.CP1AVERAGE.x}}</p>
+        <p> y: {{keypoint.CP1AVERAGE.y}}</p>
+        <p> CP2 </p>
+        <p> x: {{keypoint.CP2AVERAGE.x}}</p>
+        <p> y: {{keypoint.CP2AVERAGE.y}}</p>
+        <button name="updateCP">Update</button>
+      </div>
+    </div>
     <div v-if="visible" :class="{isDimmed:dimmed}">
       <h1>{{ msg }}</h1>
       <span>Enter a polynomial function to solve: </span>
@@ -40,7 +55,7 @@
     <my-canvas style="width:100%; height:100%;margin:auto;">
       <function-graph
       :solutions="solutions"
-      :tripled="tripled"
+      :keypoints="keypoints"
       :func="func"
       >
       </function-graph>
@@ -66,11 +81,11 @@ export default {
     return {
       visible: true,
       dimmed: false,
+      serverSwitch: true,
       stringFunction: "x^3-2x+24",
       func: {'factors':[],'length':0},
       funcString: "",
       localServer: true, //Whether to use to local api, for testing purposes only
-      //apiLocation: "http://localhost:3543/api",//"https://random-project-testing.com/api",
       validFunction: true,
       result: "",
       error: "",
@@ -79,6 +94,7 @@ export default {
       funcId: -1,
       tripled: [],
       tripled2: [],
+      keypoints: [],
       haveAllInfo: false,
       termStrings: [],
       msg: 'PolySolve: Simple algorithm to find roots for a polynomial function',
@@ -127,12 +143,12 @@ export default {
             "id": this.funcId
           }
         };
-        this.$http.get(this.apiLocation + '/critical',{params: {'id': this.funcId}})
+        this.$http.get(this.apiLocation + '/keypoints',{params: {'id': this.funcId}})
         .then(function(response2){
-          this.tripled = response2.body.tripled;
+          this.keypoints = response2.body.keypoints;
           this.solutions = results; //called here so both set at same time
           console.log("db");
-          console.log(this.tripled);
+          console.log(this.keypoints);
           console.log(results);
           //console.log(response2);
         }, function(error){
@@ -201,6 +217,20 @@ export default {
   padding: 1px;
   border: 1px solid grey;
   box-shadow: 2px 2px 1px;
+}
+
+#serverSelector {
+  position: fixed;
+  right: 4px;
+  top: 4px;
+}
+
+#controlPoints {
+  position: fixed;
+  left: 4px;
+  top: 40px;
+  background-color: black;
+  color: white
 }
 
 #app {

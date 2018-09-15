@@ -16,7 +16,7 @@ export default {
       type: Array,
       //default: []
     },
-    tripled: {
+    keypoints: {
       type: Array,
       //default: []
     },
@@ -46,7 +46,7 @@ export default {
       height: 2,
       xPercentOffset: 0,
       yPercentOffset: 0,
-      scale: .5, //Both x and y direction - zoom factor
+      scale: .75, //Both x and y direction - zoom factor
       windowScale: 1, //How much of the webpage the canvas element should take
       draw: null,
       calculated: null,
@@ -76,11 +76,11 @@ export default {
       //console.log("Updating");
       const ctx = this.provider.context;
       this.establishScale();
-
       if (this.checkViewModified()) {
         let canvas = this.provider.context.canvas;
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
+        this.newDrawObject();
       }
 
       if (this.draw == null || this.checkFuncModified() ) {
@@ -129,9 +129,6 @@ export default {
       //this.yPercentOffset = 0;//min_y / this.height;
       //console.log("W*H",this.width,this.height);
     },
-    distance: function(x1,y1,x2,y2) {
-      return Math.sqrt((x1-y1)**2 + (x2-y2)**2)
-    },
     newDrawObject: function() {
       //Recreates the this.draw object
       //Called when one of this.vars changes
@@ -139,7 +136,7 @@ export default {
       //console.log("New function");
       let ctx = this.provider.context;
       let convert = new Convert(this.width, this.height, ctx, this.xPercentOffset, this.scale);
-      let calculate = new Calculate(convert, this.solutions, this.tripled, this.func, ctx);
+      let calculate = new Calculate(convert, this.solutions, this.keypoints, this.func, ctx);
       this.draw = new Draw(calculate, ctx, this.scale);
     },
     checkViewModified: function() {
@@ -185,9 +182,9 @@ export default {
     findMinMaxY: function() {
       let min_y = 0;
       let max_y = 0;
-      for (let triple of this.tripled) {
-        min_y = Math.min(triple.left_y, triple.y, triple.right_y, min_y);
-        max_y = Math.max(triple.left_y, triple.y, triple.right_y, max_y)
+      for (let keypoint of this.keypoints) {
+        min_y = Math.min(keypoint.left.y, keypoint.crit.y, keypoint.right.y, min_y);
+        max_y = Math.max(keypoint.left.y, keypoint.crit.y, keypoint.right.y, max_y)
       }
       return {min_y, max_y}
     }
@@ -198,17 +195,17 @@ export default {
       //Some of the points that need to be drawn do not exist as solutions
       //or critical points
       let min_x, max_x, min_y, max_y;
-      let tLen = this.tripled.length;
-      if (this.tripled.length == 1) {
-        let middle_x = this.tripled[0].x;
-        max_x = this.tripled[0].right_x;
-        min_x = this.tripled[0].left_x;
+      let tLen = this.keypoints.length;
+      if (this.keypoints.length == 1) {
+        let middle_x = this.keypoints[0].x;
+        max_x = this.keypoints[0].right.x;
+        min_x = this.keypoints[0].left.x;
         let minMaxY = this.findMinMaxY();
         min_y = minMaxY.min_y;
         max_y = minMaxY.max_y;
-      } else if (this.tripled.length != 0) {
-        max_x = this.tripled[tLen-1].right_x;
-        min_x = this.tripled[0].left_x;
+      } else if (this.keypoints.length != 0) {
+        max_x = this.keypoints[tLen-1].right.x;
+        min_x = this.keypoints[0].left.x;
         let minMaxY = this.findMinMaxY();
         min_y = minMaxY.min_y;
         max_y = minMaxY.max_y;
