@@ -8,14 +8,20 @@
       <p>Currently: {{apiLocation}}</p>
     </div>
     <div id="controlPoints">
-      <div v-for="keypoint in keypoints">
+      <div v-for="keypoint in modifiedKeypoints">
         <p> CP1 </p>
-        <p> x: {{keypoint.CP1AVERAGE.x}}</p>
-        <p> y: {{keypoint.CP1AVERAGE.y}}</p>
+        <div id="editCoord">
+          <p> x: {{keypoint.controlPoints.CP1.x}}</p>
+          <input name="cp1x" v-model="keypoint.controlPoints.CP1.x" type="number">
+        </div>
+        <p> y: {{keypoint.controlPoints.CP1.y}}</p>
+        <input name="cp1y" v-model="keypoint.controlPoints.CP1.y" type="number">
         <p> CP2 </p>
-        <p> x: {{keypoint.CP2AVERAGE.x}}</p>
-        <p> y: {{keypoint.CP2AVERAGE.y}}</p>
-        <button name="updateCP">Update</button>
+        <p> x: {{keypoint.controlPoints.CP2.x}}</p>
+        <input name="cp2x" v-model="keypoint.controlPoints.CP2.x" type="number">
+        <p> y: {{keypoint.controlPoints.CP2.y}}</p>
+        <input name="cp2y" v-model="keypoint.controlPoints.CP2.y" type="number">
+        <!--<button name="updateCP">Update</button>-->
       </div>
     </div>
     <div v-if="visible" :class="{isDimmed:dimmed}">
@@ -47,15 +53,11 @@
           <div id="coeff">{{sol}}</div>
         </div>
       </div>
-      <!--<p>{{result}}</p>
-      <p>{{funcString}}</p>
-      <p>{{terms}}</p>
-      <p>{{error}}</p>-->
     </div>
     <my-canvas style="width:100%; height:100%;margin:auto;">
       <function-graph
       :solutions="solutions"
-      :keypoints="keypoints"
+      :keypoints="modifiedKeypoints"
       :func="func"
       >
       </function-graph>
@@ -95,6 +97,7 @@ export default {
       tripled: [],
       tripled2: [],
       keypoints: [],
+      modifiedKeypoints: [],
       haveAllInfo: false,
       termStrings: [],
       msg: 'PolySolve: Simple algorithm to find roots for a polynomial function',
@@ -146,6 +149,7 @@ export default {
         this.$http.get(this.apiLocation + '/keypoints',{params: {'id': this.funcId}})
         .then(function(response2){
           this.keypoints = response2.body.keypoints;
+          this.modifiedKeypoints = this.keypoints;
           this.solutions = results; //called here so both set at same time
           console.log("db");
           console.log(this.keypoints);

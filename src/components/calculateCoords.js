@@ -111,29 +111,24 @@ class Calculate {
     let curveList = []; //list of curve objects
     for (let keypoint of keypoints) {
       let type;
-      if (keypoint.left.y < keypoint.crit.y && keypoint.crit.y < keypoint.right.y || keypoint.left.y > keypoint.crit.y && keypoint.crit.y > keypoint.right.y) {
+      if (keypoint.points.left.y < keypoint.points.crit.y && keypoint.points.crit.y < keypoint.points.right.y ||
+         keypoint.points.left.y > keypoint.points.crit.y && keypoint.points.crit.y > keypoint.points.right.y) {
         type = 'Inflection'
       } else {
         type = 'Cubic'
       }
       const functionPart = {
         type,
-        left : this.convert.cartesianCoordsToCanvas(keypoint.left),
-        CP1 : this.convert.cartesianCoordsToCanvas(keypoint.CP1),
-        CP2: this.convert.cartesianCoordsToCanvas(keypoint.CP2),
-        CP1a : this.convert.cartesianCoordsToCanvas(keypoint.CP1a),
-        CP2a : this.convert.cartesianCoordsToCanvas(keypoint.CP2a),
-        CP1b : this.convert.cartesianCoordsToCanvas(keypoint.CP1b),
-        CP2b : this.convert.cartesianCoordsToCanvas(keypoint.CP2b),
-        CP1AVERAGE : this.convert.cartesianCoordsToCanvas(keypoint.CP1AVERAGE),
-        CP2AVERAGE : this.convert.cartesianCoordsToCanvas(keypoint.CP2AVERAGE),
-        right: this.convert.cartesianCoordsToCanvas(keypoint.right),
+        left : this.convert.cartesianCoordsToCanvas(keypoint.points.left),
+        CP1 : this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP1),
+        CP2: this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP2),
+        right: this.convert.cartesianCoordsToCanvas(keypoint.points.right),
         root1: null,
         root2: null,
         labels: {
-          left: keypoint.left,
-          middle: keypoint.crit,
-          right: keypoint.right
+          left: keypoint.points.left,
+          middle: keypoint.points.crit,
+          right: keypoint.points.right
         }
       }
       curveList.push(functionPart)

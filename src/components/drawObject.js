@@ -18,11 +18,11 @@ class Draw {
     //console.log(newCurves);
     this.alternate = true;
     if (curvesList != null) {
-      for (let i of [1,2,3,4]) {
+      //for (let i of [1,2,3,4]) {
         let index = 0;
         for (const curve of curvesList) {
           //if (curve.type == 'Cubic') {
-            this.Cubic(curve,i);
+            this.Cubic(curve);
           //} else if (curve.type == 'Inflection') {
             //this.Inflection(curve,i);
           //} else {
@@ -32,10 +32,10 @@ class Draw {
           index += 1;
           this.alternate = !this.alternate
         }
-      }
+      //}
     }
   }
-  Cubic(curve, i) {
+  Cubic(curve) {
     const start = curve.left;
     const crit = curve.middle;
     const end = curve.right;
@@ -43,20 +43,9 @@ class Draw {
     //const above2 = (crit.y > end.y) ? 1 : -1;
     console.log("Cubic curve");
     console.log(curve);
-    let cp1, cp2;
-    if (i == 1) {
-      cp1 = curve.CP1;
-      cp2 = curve.CP2;
-    } else if (i == 2) {
-      cp1 = curve.CP1a;
-      cp2 = curve.CP2a;
-    } else if (i == 3){
-      cp1 = curve.CP1b;
-      cp2 = curve.CP2b;
-    } else {
-      cp1 = curve.CP1AVERAGE,
-      cp2 = curve.CP2AVERAGE
-    }
+    let cp1 = curve.CP1;
+    let cp2 = curve.CP2;
+
     /*if (cp1.x > cp2.x) {
       let old_cp1 = cp1;
       cp1 = cp2;
@@ -65,7 +54,7 @@ class Draw {
     //const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth);
     //const cp1 = [(crit[0] + start[0]) / 2, crit[1] + ((this.ctx.canvas.height / 2 - start[1]) / .85 + adjust) * above1]; // or * (20 / 17)
     //const cp2 = [(end[0] + crit[0]) / 2, crit[1] + ((this.ctx.canvas.height / 2 - end[1]) / .85  + adjust) * above2];
-    this.bezierCurve(start,cp1,cp2,end,curve.root1,curve.root2, i);
+    this.bezierCurve(start,cp1,cp2,end,curve.root1,curve.root2);
   }
   Inflection(curve) {
     const start = curve.left;
@@ -88,21 +77,14 @@ class Draw {
     //const cp2 = [(end[0] + crit[0]) / 2, start[1]];
     this.bezierCurve(start,cp1,cp2,end,curve.root1,curve.root2);
   }
-  bezierCurve(start,cp1,cp2,end,root1,root2, i) {
+  bezierCurve(start,cp1,cp2,end,root1,root2) {
     this.ctx.beginPath();
     this.ctx.moveTo(start.x,start.y);
 
     // Draw the new graph.
     let colour;
-    if (i == 1) {
-      colour = this.priColour1
-    } else if (i == 2) {
-      colour = this.priColour2
-    } else if (i == 3){
-      colour = this.priColour3
-    } else {
-      colour = this.priColour4
-    }
+    colour = this.priColour1;
+
     this.ctx.strokeStyle = colour;//(this.alternate) ? this.priColour1 : this.priColour2;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,end.x,end.y);

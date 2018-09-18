@@ -183,8 +183,8 @@ export default {
       let min_y = 0;
       let max_y = 0;
       for (let keypoint of this.keypoints) {
-        min_y = Math.min(keypoint.left.y, keypoint.crit.y, keypoint.right.y, min_y);
-        max_y = Math.max(keypoint.left.y, keypoint.crit.y, keypoint.right.y, max_y)
+        min_y = Math.min(keypoint.points.left.y, keypoint.points.crit.y, keypoint.points.right.y, min_y);
+        max_y = Math.max(keypoint.points.left.y, keypoint.points.crit.y, keypoint.points.right.y, max_y)
       }
       return {min_y, max_y}
     }
@@ -198,14 +198,14 @@ export default {
       let tLen = this.keypoints.length;
       if (this.keypoints.length == 1) {
         let middle_x = this.keypoints[0].x;
-        max_x = this.keypoints[0].right.x;
-        min_x = this.keypoints[0].left.x;
+        max_x = this.keypoints[0].points.right.x;
+        min_x = this.keypoints[0].points.left.x;
         let minMaxY = this.findMinMaxY();
         min_y = minMaxY.min_y;
         max_y = minMaxY.max_y;
       } else if (this.keypoints.length != 0) {
-        max_x = this.keypoints[tLen-1].right.x;
-        min_x = this.keypoints[0].left.x;
+        max_x = this.keypoints[tLen-1].points.right.x;
+        min_x = this.keypoints[0].points.left.x;
         let minMaxY = this.findMinMaxY();
         min_y = minMaxY.min_y;
         max_y = minMaxY.max_y;
