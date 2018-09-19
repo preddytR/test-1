@@ -17,7 +17,7 @@ export default {
   },
   data () {
     return {
-     localServer: true,
+     localServer: false,
     }
   },
   methods: {
@@ -33,7 +33,7 @@ export default {
 #serverSelector {
   position: fixed;
   right: 4px;
-  top: 4px;
+  top: 10px;
 	background-color: white;
 	border: 1px solid grey;
 	border-radius: .25rem;

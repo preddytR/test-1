@@ -72,7 +72,7 @@ export default {
       tempVisible: false,
       dimmed: false,
       serverSwitch: true,
-			localServer: true,
+			localServer: false,
       stringFunction: "x^25+x^6+2",
       func: {'factors':[],'length':0},
       funcString: "", //Whether to use to local api, for testing purposes only

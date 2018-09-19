@@ -1,5 +1,5 @@
 <template>
-  <div id="controlContainer" :class="(visible) ? 'visible' : 'notVisible'">
+  <div v-if="keypoints.length > 0" id="controlContainer" :class="(visible) ? 'visible' : 'notVisible'">
     <div id="controlPoints">
       <div id="hideButton" @click="visible = !visible">
         <div v-if="visible">&#10097;</div>
@@ -70,7 +70,7 @@ export default {
 #controlContainer {
   width: 325px;
   position: absolute;
-  top: 40px;
+  top: 80px;
   z-index: 100;
   right: 0px;
 
