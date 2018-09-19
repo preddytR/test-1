@@ -1,8 +1,8 @@
 <template>
-  <div class="my-canvas-wrapper">
-    <canvas ref="my-canvas"></canvas>
-    <slot></slot>
-  </div>
+	<div class="my-canvas-wrapper">
+		<canvas ref="my-canvas"/>
+		<slot/>
+	</div>
 </template>
 
 <script>
@@ -40,7 +40,6 @@ export default {
 
 <style>
 .my-canvas-wrapper {
-  border: 2px dashed black;
   position: fixed;
   left: 0;
   bottom: 0;

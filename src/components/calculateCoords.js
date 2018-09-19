@@ -11,12 +11,26 @@ class Calculate {
     this.xPercentOffset = this.convert.xPercentOffset;
 
     this.keypoints = keypoints;
-
-    //this.bezierList = this.convertToBeziers(keypoints);
   }
   get Curves() {
+    //converts an ordered list of points to a list of peicewise bezier curves or lines fitting those points
     if (this.keypoints.length > 0) {
-      return this.convertToBeziers(this.keypoints);
+      let curveList = []; //list of curve objects
+      for (let keypoint of this.keypoints) {
+        const functionPart = {
+          left : this.convert.cartesianCoordsToCanvas(keypoint.points.left),
+          CP1 : this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP1),
+          CP2: this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP2),
+          right: this.convert.cartesianCoordsToCanvas(keypoint.points.right),
+          labels: {
+            left: keypoint.points.left,
+            middle: keypoint.points.crit,
+            right: keypoint.points.right
+          }
+        }
+        curveList.push(functionPart)
+      }
+      return curveList
     } else {
       return null
     }
@@ -44,23 +58,22 @@ class Calculate {
     const y0Pix = this.convert.percentHeightToPix(y0, this.ctx);
 
     const x0 = -this.xPercentOffset + (this.xPercentOffset + 50) * (1 - this.scale);//line where x=0
-    //console.log("x0",x0);
     const x0Pix = this.convert.percentWidthToPix(x0, this.ctx);
 
-     //We skip scaling the coords down
-    let xStartCoord = [0, y0Pix];
-    let xEndCoord = [this.ctx.canvas.width, y0Pix];
-    let yStartCoord = [x0Pix, 0];
-    let yEndCoord = [x0Pix, this.ctx.canvas.height];
+     //We skip scaling the coords down as we want them to extend to each side of the view window
+    let xStartCoord = {x:0, y:y0Pix};
+    let xEndCoord = {x:this.ctx.canvas.width, y:y0Pix};
+    let yStartCoord = {x:x0Pix, y:0};
+    let yEndCoord = {x:x0Pix, y:this.ctx.canvas.height};
 
-    //Calculating the numbers to use for the axis
+    //Calculating the numbers to use for the axis scale guide
     const outerWidth = this.ctx.canvas.width * (1 - this.scale) / 2;
     const outerHeight = this.ctx.canvas.height * (1 - this.scale) / 2;
 
     const xMin = this.round(this.convert.percentToXCoord(0));
     const xMax = this.round(this.convert.percentToXCoord(100));
-    const yMin = this.round(this.convert.percentToYCoord(0));
-    const yMax = this.round(this.convert.percentToYCoord(100));
+    const yMin = -this.round(this.convert.percentToYCoord(0));//-ve as y-axis reversed
+    const yMax = -this.round(this.convert.percentToYCoord(100));
 
     const xLeftLabel = {x: outerWidth, y: y0Pix, rounded: xMin};
     const xRightLabel = {x: this.ctx.canvas.width - outerWidth, y: y0Pix, rounded: xMax};
@@ -72,8 +85,8 @@ class Calculate {
       yTopLabel,
       yBotLabel,
     ];
-    console.log("labels");
-    console.log(labels);
+    //console.log("labels");
+    //console.log(labels);
     const calculated = {
       xStart: xStartCoord,
       xEnd: xEndCoord,
@@ -98,117 +111,16 @@ class Calculate {
 
     return calculated
   }
-  evaluate(x_value) {
-    let factors = this.func.factors;
-    let total = 0;
-    for (let factor of factors) {
-      total += factor.coeff * (x_value ** factor.power)
-    }
-    return total
-  }
-  convertToBeziers(keypoints) {
-    //converts an ordered list of points to a list of peicewise bezier curves or lines fitting those points
-    let curveList = []; //list of curve objects
-    for (let keypoint of keypoints) {
-      let type;
-      if (keypoint.points.left.y < keypoint.points.crit.y && keypoint.points.crit.y < keypoint.points.right.y ||
-         keypoint.points.left.y > keypoint.points.crit.y && keypoint.points.crit.y > keypoint.points.right.y) {
-        type = 'Inflection'
-      } else {
-        type = 'Cubic'
-      }
-      const functionPart = {
-        type,
-        left : this.convert.cartesianCoordsToCanvas(keypoint.points.left),
-        CP1 : this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP1),
-        CP2: this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP2),
-        right: this.convert.cartesianCoordsToCanvas(keypoint.points.right),
-        root1: null,
-        root2: null,
-        labels: {
-          left: keypoint.points.left,
-          middle: keypoint.points.crit,
-          right: keypoint.points.right
-        }
-      }
-      curveList.push(functionPart)
-    }
-    return curveList
-  }
   linearCurve(x_intercept) {
+    //Not called anywhere yet but provides the basic object needed to plot out a straight line
     let x_plus_1 = x_intercept + 1;
-    let f_x_plus_1 = this.evaluate(x_plus_1);
+    let f_x_plus_1 = this.func.eval_f_x(x_plus_1);
 
     const functionPart = {
       type: 'Linear',
       xIntercept: x_intercept,
       xPlus1: x_plus_1,
       fXplus1: f_x_plus_1,
-    }
-    return functionPart
-  }
-  leftRoot(root, crit1, crit2) {
-    const functionPart = {
-      type: 'Cubic',
-      leftX: root.Root,
-      leftY: 0,
-      middleX: crit1.Crit.x_val,
-      middleY: crit1.Crit.y_val,
-      rightX: crit2.Crit.x_val,
-      rightY: crit2.Crit.y_val,
-      root1: Math.round(root.Root * 100) / 100,
-      root2: null,
-    }
-    console.log("leftRoot");
-    console.log(functionPart);
-    return functionPart
-  }
-  inflectionCurve(crit, root) {
-    //Have to create third point that lies opposite the root relative to the inflection point
-    console.log("inflection");
-    let leftX, rightX, leftY, rightY;
-    const leftSide = root.Root < crit.Crit.x_val; //Root is on left side of crit
-    //console.log("left",leftSide);
-
-    if (leftSide) {
-      leftX = root.Root;
-      leftY = 0;
-      rightX = 2 * crit.Crit.x_val - root.Root;
-      rightY = 2 * crit.Crit.y_val
-    } else {
-      leftX = 2 * crit.Crit.x_val - root.Root;
-      leftY = 2 * crit.Crit.y_val
-      rightX = root.Root;
-      rightY = 0
-
-    }
-    const functionPart = {
-      type: 'Inflection',
-      leftX,
-      leftY,
-      middleX: crit.Crit.x_val,
-      middleY: crit.Crit.y_val,
-      rightX,
-      rightY,
-      root1: (leftSide) ? root.Root : null,
-      root2: (leftSide) ? null : root.Root,
-    }
-    //console.log("cartesian");
-    //console.log(functionPart);
-    return functionPart
-  }
-  quadraticCurve(root1, crit, root2) {
-    //actually drawn w cubic bezier but w/ever
-    const functionPart = {
-      type: 'Cubic',
-      leftX: root1.Root,
-      leftY: 0,
-      middleX: crit.Crit.x_val,
-      middleY: crit.Crit.y_val,
-      rightX: root2.Root,
-      rightY: 0,
-      root1: Math.round(root1.Root * 100) / 100,
-      root2: Math.round(root2.Root * 100) / 100,
     }
     return functionPart
   }

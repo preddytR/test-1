@@ -16,76 +16,27 @@ class Draw {
     const curvesList = this.calculated.Curves;
     //console.log("newCurves");
     //console.log(newCurves);
-    this.alternate = true;
     if (curvesList != null) {
-      //for (let i of [1,2,3,4]) {
-        let index = 0;
-        for (const curve of curvesList) {
-          //if (curve.type == 'Cubic') {
-            this.Cubic(curve);
-          //} else if (curve.type == 'Inflection') {
-            //this.Inflection(curve,i);
-          //} else {
-            //console.log("curve type error");
-          //}
-          //this.triplePoints(curve.labels, index == curvesList.length - 1);
-          index += 1;
-          this.alternate = !this.alternate
-        }
-      //}
+      let index = 0;
+      for (const curve of curvesList) {
+        this.Cubic(curve);
+        this.triplePoints(curve.labels, index == curvesList.length - 1);
+        index += 1;
+      }
     }
   }
   Cubic(curve) {
     const start = curve.left;
-    const crit = curve.middle;
     const end = curve.right;
-    //const above1 = (crit.y > start.y) ? 1 : -1; //whether the crit point is above or below the LHS point
-    //const above2 = (crit.y > end.y) ? 1 : -1;
-    console.log("Cubic curve");
-    console.log(curve);
+    //console.log("Cubic curve");
+    //console.log(curve);
     let cp1 = curve.CP1;
     let cp2 = curve.CP2;
 
-    /*if (cp1.x > cp2.x) {
-      let old_cp1 = cp1;
-      cp1 = cp2;
-      cp2 = old_cp1;
-    }*/
-    //const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth);
-    //const cp1 = [(crit[0] + start[0]) / 2, crit[1] + ((this.ctx.canvas.height / 2 - start[1]) / .85 + adjust) * above1]; // or * (20 / 17)
-    //const cp2 = [(end[0] + crit[0]) / 2, crit[1] + ((this.ctx.canvas.height / 2 - end[1]) / .85  + adjust) * above2];
-    this.bezierCurve(start,cp1,cp2,end,curve.root1,curve.root2);
-  }
-  Inflection(curve) {
-    const start = curve.left;
-    const crit = curve.middle;
-    const end = curve.right;
-    //const above1 = (crit[1] > start[1]) ? 1: -1;//May need to change how y0 on canvas defined
-    //const above2 = (crit[1] > end[1]) ? 1: -1;
-    console.log("Inflection curve");
-    console.log(curve);
-    let cp1, cp2;
-    if (curve.CP1.x < curve.CP2.x) {
-      cp1 = curve.CP1;
-      cp2 = curve.CP2;
-    } else {
-      cp1 = curve.CP2;
-      cp2 = curve.CP1;
-    }
-    //const adjust = (this.scale * this.ctx.canvas.height / 6 - this.lineWidth);
-    //const cp1 = [(crit[0] + start[0]) / 2, end[1]]; // or * (20 / 17)
-    //const cp2 = [(end[0] + crit[0]) / 2, start[1]];
-    this.bezierCurve(start,cp1,cp2,end,curve.root1,curve.root2);
-  }
-  bezierCurve(start,cp1,cp2,end,root1,root2) {
     this.ctx.beginPath();
     this.ctx.moveTo(start.x,start.y);
-
     // Draw the new graph.
-    let colour;
-    colour = this.priColour1;
-
-    this.ctx.strokeStyle = colour;//(this.alternate) ? this.priColour1 : this.priColour2;
+    this.ctx.strokeStyle = this.priColour1;//(this.alternate) ? this.priColour1 : this.priColour2;
     this.ctx.lineWidth = this.lineWidth;
     this.ctx.bezierCurveTo(cp1.x,cp1.y,cp2.x,cp2.y,end.x,end.y);
     this.ctx.stroke();
@@ -114,9 +65,6 @@ class Draw {
   Border() {
     //Drawing Outline
     const newBorder = this.calculated.Border;
-
-    /*console.log("border");
-    console.log(newBorder);*/
     this.ctx.rect(newBorder.x, newBorder.y, newBorder.w, newBorder.h);
     this.ctx.strokeStyle = "blue";
     this.ctx.stroke();
@@ -129,11 +77,15 @@ class Draw {
     //console.log("axis");
     //console.log(newAxis);
     //x-axis
-    this.ctx.moveTo(...newAxis.xStart);
-    this.ctx.lineTo(...newAxis.xEnd);
+    let xStart = newAxis.xStart;
+    let xEnd = newAxis.xEnd;
+    this.ctx.moveTo(xStart.x, xEnd.y);
+    this.ctx.lineTo(xEnd.x, xEnd.y);
     //y-axis
-    this.ctx.moveTo(...newAxis.yStart);
-    this.ctx.lineTo(...newAxis.yEnd);
+    let yStart = newAxis.yStart;
+    let yEnd = newAxis.yEnd;
+    this.ctx.moveTo(yStart.x, yStart.y);
+    this.ctx.lineTo(yEnd.x, yEnd.y);
     this.ctx.stroke();
 
     //Adding axis limit numbers

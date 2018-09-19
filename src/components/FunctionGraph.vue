@@ -14,14 +14,17 @@ export default {
     // Array of roots plus array of critical points
     solutions: {
       type: Array,
+      required: true,
       //default: []
     },
     keypoints: {
       type: Array,
+      required: true,
       //default: []
     },
     func: {
       type: Object,
+      required: true,
     },
     // The color of the function.
     color: {
@@ -46,11 +49,45 @@ export default {
       height: 2,
       xPercentOffset: 0,
       yPercentOffset: 0,
-      scale: .75, //Both x and y direction - zoom factor
+      scale: .95, //Both x and y direction - zoom factor
       windowScale: 1, //How much of the webpage the canvas element should take
       draw: null,
       calculated: null,
     }
+  },
+  computed: {
+    getedgeValues () {
+      //Works out the minimum and maximum x and y values that will be drawn
+      //Some of the points that need to be drawn do not exist as solutions
+      //or critical points
+      let min_x, max_x, min_y, max_y;
+      let tLen = this.keypoints.length;
+      if (this.keypoints.length == 1) {
+        max_x = this.keypoints[0].points.right.x;
+        min_x = this.keypoints[0].points.left.x;
+        let minMaxY = this.findMinMaxY();
+        min_y = minMaxY.min_y;
+        max_y = minMaxY.max_y;
+      } else if (this.keypoints.length != 0) {
+        max_x = this.keypoints[tLen-1].points.right.x;
+        min_x = this.keypoints[0].points.left.x;
+        let minMaxY = this.findMinMaxY();
+        min_y = minMaxY.min_y;
+        max_y = minMaxY.max_y;
+      } else {
+        [min_x, max_x, min_y, max_y] = [-1, 1, -1, 1];
+        //console.log("edgeBase");
+      }
+      const edgeValues = {
+        max_x,
+        min_x,
+        max_y,
+        min_y,
+      };
+      //console.log("edge");
+      //console.log(edgeValues);
+      return edgeValues
+    },
   },
   mounted: function(){
     this.waiting = false;
@@ -66,7 +103,7 @@ export default {
     },
     timerFunction: function() {
      this.waiting = false;
-     console.log("Changing", window.innerHeight, this.provider.context.canvas.height);
+     //console.log("Changing", window.innerHeight, this.provider.context.canvas.height);
      this.redraw();
      //actualResizeHandler();
      //The actualResizeHandler will execute at a rate of 1fps
@@ -189,47 +226,13 @@ export default {
       return {min_y, max_y}
     }
   },
-  computed: {
-    getedgeValues () {
-      //Works out the minimum and maximum x and y values that will be drawn
-      //Some of the points that need to be drawn do not exist as solutions
-      //or critical points
-      let min_x, max_x, min_y, max_y;
-      let tLen = this.keypoints.length;
-      if (this.keypoints.length == 1) {
-        let middle_x = this.keypoints[0].x;
-        max_x = this.keypoints[0].points.right.x;
-        min_x = this.keypoints[0].points.left.x;
-        let minMaxY = this.findMinMaxY();
-        min_y = minMaxY.min_y;
-        max_y = minMaxY.max_y;
-      } else if (this.keypoints.length != 0) {
-        max_x = this.keypoints[tLen-1].points.right.x;
-        min_x = this.keypoints[0].points.left.x;
-        let minMaxY = this.findMinMaxY();
-        min_y = minMaxY.min_y;
-        max_y = minMaxY.max_y;
-      } else {
-        [min_x, max_x, min_y, max_y] = [-1, 1, -1, 1];
-        console.log("edgeBase");
-      }
-      const edgeValues = {
-        max_x,
-        min_x,
-        max_y,
-        min_y,
-      };
-      console.log("edge");
-      console.log(edgeValues);
-      return edgeValues
-    },
-  },
 
   render () {
     // Since the parent canvas has to mount first, it's *possible* that the context may not be
     // injected by the time this render function runs the first time.
-    console.log("detected change");
+    //console.log("detected change");
     this.redraw();
+    return true;
   }
 }
 </script>
