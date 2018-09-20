@@ -8,12 +8,17 @@
 			<i class="fa fa-eye"/>
 		</div>
 		<div v-if="!perfectGraph" id="approximationWarning">Approximation</div>
-		<div v-if="visible || tempVisible" :class="{isDimmed:dimmed}">
-			<the-server-selector
-				:serverSwitch="serverSwitch"
-				@update-server="localServer=$event"/>
-			<edit-control-points
-				:keypoints = "modifiedKeypoints"/>
+		<div id="rightToolbar">
+			<toggle-right-button v-if="serverSwitch">
+				<the-server-selector
+					@update-server="localServer=$event"/>
+			</toggle-right-button>
+			<toggle-right-button v-if="modifiedKeypoints.length>0">
+				<edit-control-points
+					:keypoints = "modifiedKeypoints"/>
+			</toggle-right-button>
+		</div>
+		<div v-if="visible || tempVisible" :class="{isDimmed:dimmed}" id="center">
 			<h1 class="display-4">{{ msg }}</h1>
 			<span>Enter a polynomial function to solve: </span>
 			<div id="InputBar" class="input-group input-group-lg">
@@ -26,9 +31,9 @@
 				</div>
 			</div>
 			<display-function
-				:stringFunction="stringFunction"
-				:validFunction="validFunction"
-				:termStrings="termStrings"/>
+				:string-function="stringFunction"
+				:valid-function="validFunction"
+				:term-strings="termStrings"/>
 			<div v-if="solutions.length != 0" id="functionSolutions">
 				<div id="functionTerm">x</div>
 				<div id="functionTerm">=</div>
@@ -55,6 +60,7 @@ import FunctionGraph from './components/FunctionGraph.vue'
 import TheServerSelector from './components/TheServerSelector.vue'
 import DisplayFunction from './components/DisplayFunction.vue'
 import EditControlPoints from './components/EditControlPoints.vue'
+import ToggleRightButton from './components/ToggleRightButton.vue'
 
 //import {sendFunction} from './solutionRequests/sendFunction'
 export default {
@@ -65,6 +71,7 @@ export default {
 		TheServerSelector,
 		DisplayFunction,
 		EditControlPoints,
+		ToggleRightButton,
   },
   data () {
     return {
@@ -214,6 +221,12 @@ export default {
   color: red;
   background-color: black;
 }
+#rightToolbar {
+	position: absolute;
+	right: 0;
+	width: 400px;
+	height: 100%;
+}
 #approximationWarning {
 	width: 100%;
 	position: fixed;
@@ -231,6 +244,7 @@ export default {
   padding: 1px;
   border: 1px solid grey;
   box-shadow: 2px 2px 1px;
+	z-index: 100;
 }
 
 #app {
@@ -238,58 +252,15 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   /*color: #2c3e50;*/
-  margin-top: 60px;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-ul li {
-  display: inline-block;
-  margin: 0 10px;
-}
-ol li{
-  text-align: left;
-}
-
-a {
-  color: #42b983;
 }
 
 #InputBar {
   width: 70%;
   margin: auto;
+	/*z-index: -10;*/
 }
-#functionPreview {
-  font-family: Verdana;
-  /*background-color: Chartreuse;*/
-  margin-top: 30px;
-  margin-left: auto;
-  margin-right: auto;
-  width: 50%;
-  height: 120px;
+#center {
+	/*z-index: -11;*/
 }
-#functionSolutions {
-  margin-bottom: 20px;
-}
-#functionTerm {
-  /*padding-top: 20px;
-  padding-bottom: 20px;*/
-  font-size: 40px;
-  background-color: DeepSkyBlue;
-  margin-right: 10px;
-  border-radius: 5px;
-  border: 5px solid CornFlowerBlue;
-  display: inline;
-  text-shadow: 2px 2px 5px grey;
-  padding-bottom: 3px;
-}
-#coeff,  #var, #power, #sign, #termContainer{
-  display: inline;
-}
-#sign {
-  color: white;
-}
+
 </style>

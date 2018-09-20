@@ -1,7 +1,7 @@
 <template>
-	<div v-if="serverSwitch" id="serverSelector">
+	<div id="serverSelector">
 		<div id="switchMessage">API service</div>
-		<div class="btn-group" role="group" aria-label="Switch webservice">
+		<div class="btn-group-vertical" role="group" aria-label="Switch webservice">
 			<button :class="['btn btn-outline-dark', {active:localServer}]" name="local" @click="updateServer(true)">Local</button>
 			<button :class="['btn btn-outline-dark', {active:!localServer}]" name="web" @click="updateServer(false)">Web</button>
 		</div>
@@ -10,11 +10,6 @@
 
 <script>
 export default {
-  props: {
-    serverSwitch: {
-      type: Boolean
-    },
-  },
   data () {
     return {
      localServer: false,
@@ -31,9 +26,9 @@ export default {
 
 <style lang="scss">
 #serverSelector {
-  position: fixed;
-  right: 4px;
-  top: 10px;
+	float: right;
+  position: relative;
+  right: 0px;
 	background-color: white;
 	border: 1px solid grey;
 	border-radius: .25rem;
@@ -43,5 +38,6 @@ export default {
 		padding-left: 5px;
 		padding-right: 5px;
 	}
+	z-index: 110;
 }
 </style>

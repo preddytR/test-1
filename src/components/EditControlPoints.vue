@@ -1,37 +1,39 @@
 <template>
-  <div v-if="keypoints.length > 0" id="controlContainer" :class="(visible) ? 'visible' : 'notVisible'">
-    <div id="controlPoints">
-      <div id="hideButton" @click="visible = !visible">
-        <div v-if="visible">&#10097;</div>
-        <div v-else>&#10096;</div>
-      </div>
-      <div v-for="(point, index) in controlPointsList">
-        <div class="input-group mb-3">
-          <div class="input-group-prepend">
-            <span class="input-group-text">{{point.name}}</span>
-            <span class="input-group-text">x</span>
-          </div>
-          <input v-model="point.CP.x" name="cpx" type="number" style="width:100px;" class="form-control">
-          <span class="input-group-text">y</span>
-          <input v-model="point.CP.y" name="cpy" type="number" style="width:100px;" class="form-control">
-        </div>
-      </div>
-    </div>
-  </div>
+	<div v-if="keypoints.length > 0" id="controlPoints">
+		<div v-for="(point, index) in controlPointsList"
+			:key="index">
+			<div class="input-group mb-3">
+				<div class="input-group-prepend">
+					<span class="input-group-text">{{point.name}}</span>
+					<span class="input-group-text">x</span>
+				</div>
+				<input v-model="point.CP.x" name="cpx" type="number" style="width:100px;" class="form-control">
+				<span class="input-group-text">y</span>
+				<input v-model="point.CP.y" name="cpy" type="number" style="width:100px;" class="form-control">
+			</div>
+		</div>
+	</div>
 </template>
 
 <script>
+import HideButton from './HideButton.vue'
+
 export default {
+  components: {
+    HideButton,
+  },
   props: {
     keypoints: {
       type: Array,
-      default: [],
+      default: function() {
+        return []
+      },
     }
   },
   data () {
     return {
       decimalPoints: 2,
-      visible: false,
+      visible: true,
     }
   },
   computed: {
@@ -53,48 +55,33 @@ export default {
   methods: {
     rounded: function(value){
       return Math.round(value * (10 ** this.decimalPoints)) / (10 ** this.decimalPoints)
+    },
+    toggleVisibility: function() {
+      if (!this.visible) {
+        this.visible = true
+      }
     }
   },
 }
 </script>
 
 <style>
-.visible {
-  transition: transform 2s;
-}
-.notVisible {
-  transition: transform 2s;
-  transform: translate(325px,0px);
-}
-
-#controlContainer {
-  width: 325px;
-  position: absolute;
-  top: 80px;
-  z-index: 100;
-  right: 0px;
-
-}
 #controlPoints {
+  /*position: relative;*/
+  /*top: 0px;*/
+  float: right;
+  z-index: 100;
+  width: 325px;
   background-color: white;
   padding-top:15px;
   border: 1px solid grey;
   box-shadow: 2px 2px 1px;
   transition: transform 1s;
+  position: relative;
+  right: 0px;
 }
- .notVisible #controlPoints:hover {
-  transform: translate(-60px,0);
-}
+
 .coord-input {
   width: 3em;
-}
-#hideButton {
-  position: absolute;
-  left: -0.5em;
-  top: 0px;
-  background: white;
-  border: 1px solid grey;
-  width: 0.5em;
-  font-size: 40px;
 }
 </style>
