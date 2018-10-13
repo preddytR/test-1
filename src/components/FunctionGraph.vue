@@ -12,6 +12,10 @@ export default {
 
   props: {
     // Array of roots plus array of critical points
+    type: {
+      type: String,
+      default: "Non-Linear"
+    },
     solutions: {
       type: Array,
       required: true,
@@ -113,18 +117,22 @@ export default {
       //console.log("Updating");
       const ctx = this.provider.context;
       this.establishScale();
+      let update = false;
       if (this.checkViewModified()) {
         let canvas = this.provider.context.canvas;
         canvas.height = window.innerHeight;
         canvas.width = window.innerWidth;
-        this.newDrawObject();
+        update = true;
       }
 
       if (this.draw == null || this.checkFuncModified() ) {
         //console.log("updating function");
-        this.newDrawObject()
+        update = true;
       }
 
+      if (update) {
+        this.newDrawObject()
+      }
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       this.draw.Graph();
@@ -173,8 +181,8 @@ export default {
       //console.log("New function");
       let ctx = this.provider.context;
       let convert = new Convert(this.width, this.height, ctx, this.xPercentOffset, this.scale);
-      let calculate = new Calculate(convert, this.solutions, this.keypoints, this.func, ctx);
-      this.draw = new Draw(calculate, ctx, this.scale);
+      let calculate = new Calculate(convert, this.solutions, this.keypoints, this.func, ctx, this.type);
+      this.draw = new Draw(calculate, ctx, this.scale, this.type);
     },
     checkViewModified: function() {
       let canvas = this.provider.context.canvas;
@@ -219,9 +227,10 @@ export default {
     findMinMaxY: function() {
       let min_y = 0;
       let max_y = 0;
+      let middle = (this.type == "Linear") ? "middle" : "crit";
       for (let keypoint of this.keypoints) {
-        min_y = Math.min(keypoint.points.left.y, keypoint.points.crit.y, keypoint.points.right.y, min_y);
-        max_y = Math.max(keypoint.points.left.y, keypoint.points.crit.y, keypoint.points.right.y, max_y)
+        min_y = Math.min(keypoint.points.left.y, keypoint.points[middle].y, keypoint.points.right.y, min_y);
+        max_y = Math.max(keypoint.points.left.y, keypoint.points[middle].y, keypoint.points.right.y, max_y)
       }
       return {min_y, max_y}
     }

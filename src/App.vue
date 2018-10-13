@@ -13,12 +13,13 @@
 				<the-server-selector
 					@update-server="localServer=$event"/>
 			</toggle-right-button>
-			<toggle-right-button v-if="modifiedKeypoints.length>0">
+			<toggle-right-button v-if="modifiedKeypoints.length>0 && type == 'Non-Linear'">
 				<edit-control-points
+					:type = "type"
 					:keypoints = "modifiedKeypoints"/>
 			</toggle-right-button>
 		</div>
-		<div v-if="visible || tempVisible" :class="{isDimmed:dimmed}" id="center">
+		<div v-if="visible || tempVisible" id="center" :class="{isDimmed:dimmed}">
 			<h1 class="display-4">{{ msg }}</h1>
 			<span>Enter a polynomial function to solve: </span>
 			<div id="InputBar" class="input-group input-group-lg">
@@ -44,6 +45,7 @@
 		</div>
 		<my-canvas :class="{isDimmed:visible}" style="width:100%; height:100%;margin:auto;">
 			<function-graph
+				:type="type"
 				:solutions="solutions"
 				:keypoints="modifiedKeypoints"
 				:func="func"
@@ -92,6 +94,7 @@ export default {
       funcId: -1,
       tripled: [],
       tripled2: [],
+			type: "Non-Linear",
       keypoints: [],
       modifiedKeypoints: [],
       haveAllInfo: false,
@@ -129,6 +132,7 @@ export default {
       }
       this.haveAllInfo = false;
       let func = generate.factor();
+			func.simplify();
       this.func = func
       this.funcString = func.toString();
       this.terms = func.factors;
@@ -141,12 +145,15 @@ export default {
         this.funcId = response.body.id;
         this.$http.get(this.apiLocation + '/keypoints',{params: {'id': this.funcId}})
         .then(function(response2){
+					this.type = response2.body.type;
           this.keypoints = response2.body.keypoints;
           this.modifiedKeypoints = this.keypoints;
 					let allMatched = true;
-					for (let keypoint of this.keypoints) {
-						if (!keypoint.matched) {
-							allMatched = false;
+					if (this.type == "Non-Linear"){
+						for (let keypoint of this.keypoints) {
+							if (!keypoint.matched) {
+								allMatched = false;
+							}
 						}
 					}
 					this.perfectGraph = allMatched;

@@ -1,6 +1,6 @@
 
 class Calculate {
-  constructor(convert, solutions, keypoints, func, ctx) {
+  constructor(convert, solutions, keypoints, func, ctx, type) {
     this.convert = convert;
     this.solutions = solutions;
     this.decimalPoints = 2;
@@ -11,20 +11,35 @@ class Calculate {
     this.xPercentOffset = this.convert.xPercentOffset;
 
     this.keypoints = keypoints;
+    this.type = type;
   }
   get Curves() {
     //converts an ordered list of points to a list of peicewise bezier curves or lines fitting those points
     if (this.keypoints.length > 0) {
       let curveList = []; //list of curve objects
-      for (let keypoint of this.keypoints) {
+      if (this.type == "Non-Linear") {
+        for (let keypoint of this.keypoints) {
+          const functionPart = {
+            left : this.convert.cartesianCoordsToCanvas(keypoint.points.left),
+            CP1 : this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP1),
+            CP2: this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP2),
+            right: this.convert.cartesianCoordsToCanvas(keypoint.points.right),
+            labels: {
+              left: keypoint.points.left,
+              middle: keypoint.points.crit,
+              right: keypoint.points.right
+            }
+          }
+          curveList.push(functionPart)
+        }
+      } else { //Linear Function
+        let keypoint =this.keypoints[0];
         const functionPart = {
-          left : this.convert.cartesianCoordsToCanvas(keypoint.points.left),
-          CP1 : this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP1),
-          CP2: this.convert.cartesianCoordsToCanvas(keypoint.controlPoints.CP2),
+          left: this.convert.cartesianCoordsToCanvas(keypoint.points.left),
           right: this.convert.cartesianCoordsToCanvas(keypoint.points.right),
-          labels: {
+          labels : {
             left: keypoint.points.left,
-            middle: keypoint.points.crit,
+            middle: keypoint.points.middle,
             right: keypoint.points.right
           }
         }

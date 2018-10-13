@@ -7,7 +7,14 @@ class FactorAST{ //list of terms
       //print('factor',factors)
       this.length = this.factors.length;
     }
-
+    simplify(){//Converts a polynomial to a monic one
+      if(Math.abs(this.factors[0].coeff) != 1){
+        let leading_factor = this.factors[0].coeff;
+        for (let factor of this.factors){
+          factor.coeff /= leading_factor
+        }
+      }
+    }
     detailed(){
       let r_str = [];
       if (this.factors.length == 1){

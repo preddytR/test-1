@@ -2,8 +2,9 @@
 //Relies on data in FunctionGraph.vue
 
 class Draw {
-  constructor(calculate, ctx, scale) {
+  constructor(calculate, ctx, scale, type) {
     this.calculated = calculate;
+    this.type = type;
     this.ctx = ctx;
     this.scale = scale;
     this.lineWidth = 5;
@@ -15,15 +16,31 @@ class Draw {
   Graph() {
     const curvesList = this.calculated.Curves;
     //console.log("newCurves");
-    //console.log(newCurves);
+    //console.log(curvesList);
     if (curvesList != null) {
-      let index = 0;
-      for (const curve of curvesList) {
-        this.Cubic(curve);
-        this.triplePoints(curve.labels, index == curvesList.length - 1);
-        index += 1;
+      if (this.type == "Non-Linear") {
+        let index = 0;
+        for (const curve of curvesList) {
+          this.Cubic(curve);
+          this.triplePoints(curve.labels, index == curvesList.length - 1);
+          index += 1;
+        }
+      } else {
+        const curve = curvesList[0];
+        this.Linear(curve);
+        this.triplePoints(curve.labels, true);
       }
     }
+  }
+  Linear(curve){
+    const start = curve.left;
+    const end = curve.right;
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = this.priColour1;//(this.alternate) ? this.priColour1 : this.priColour2;
+    this.ctx.lineWidth = this.lineWidth;
+    this.ctx.moveTo(start.x, start.y);
+    this.ctx.lineTo(end.x, end.y);
+    this.ctx.stroke();
   }
   Cubic(curve) {
     const start = curve.left;

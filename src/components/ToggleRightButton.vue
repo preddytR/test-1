@@ -1,10 +1,10 @@
 <template>
-  <div id="overflowManager">
-	<div id="itemContainer" :class="(visible) ? 'visible' : 'notVisible'">
-		<hideButton @update-visibility="visible=$event"/>
-		<slot/>
+	<div id="overflowManager">
+		<div id="itemContainer" :class="(visible) ? 'visible' : 'notVisible'">
+			<hideButton @update-visibility="visible=$event"/>
+			<slot/>
+		</div>
 	</div>
-</div>
 </template>
 
 <script>
